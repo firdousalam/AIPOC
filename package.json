@@ -1,0 +1,27 @@
+{
+  "name": "enterprise-sales-ai",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Enterprise Sales AI Application with Next.js, NestJS, and Python ML Service",
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
+  "scripts": {
+    "dev": "pnpm --filter web dev & pnpm --filter api start:dev",
+    "build": "pnpm --filter web build && pnpm --filter api build",
+    "start": "pnpm --filter web start",
+    "lint": "pnpm --filter web lint && pnpm --filter api lint",
+    "test": "pnpm --filter web test && pnpm --filter api test",
+    "clean": "pnpm -r exec rm -rf node_modules dist .next"
+  },
+  "devDependencies": {
+    "@types/node": "^20.10.0",
+    "typescript": "^5.3.3"
+  },
+  "engines": {
+    "node": ">=18.0.0",
+    "pnpm": ">=8.0.0"
+  }
+}
+

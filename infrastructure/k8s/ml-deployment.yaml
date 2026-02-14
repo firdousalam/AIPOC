@@ -1,0 +1,31 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: sales-ai-ml
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: sales-ai-ml
+  template:
+    metadata:
+      labels:
+        app: sales-ai-ml
+    spec:
+      containers:
+      - name: ml-service
+        image: sales-ai-ml:latest
+        ports:
+        - containerPort: 8000
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: ml-service
+spec:
+  selector:
+    app: sales-ai-ml
+  ports:
+  - port: 8000
+    targetPort: 8000
+
