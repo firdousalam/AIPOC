@@ -1,0 +1,10 @@
+# Railway deployment config (optional - can also use Dashboard)
+# Deploy from repo root and set "Root Directory" to apps/api in Railway dashboard
+
+[build]
+builder = "nixpacks"
+
+[deploy]
+startCommand = "npm run start:prod"
+restartPolicyType = "on_failure"
+restartPolicyMaxRetries = 10

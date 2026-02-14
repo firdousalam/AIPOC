@@ -25,55 +25,88 @@ enterprise-sales-ai/
 
 ## Prerequisites
 
-- Node.js >= 18.0.0
-- pnpm >= 8.0.0
-- Python >= 3.10
-- MongoDB >= 6.0
-- Docker & Docker Compose (optional)
+- **Node.js** >= 18
+- **pnpm** >= 8 (`npm install -g pnpm`)
+- **Python** >= 3.10 (for ML service)
+- **MongoDB** (local or Docker)
 
-## Getting Started
+## Run locally
 
-### 1. Install Dependencies
+### 1. Clone and install
 
 ```bash
+cd AIPOC
 pnpm install
 ```
 
-### 2. Setup Environment Variables
+### 2. Environment file
 
 ```bash
 cp .env.example .env
-# Edit .env with your configuration
 ```
+
+Edit `.env` if needed. Defaults work for local run:
+
+- `MONGODB_URI=mongodb://localhost:27017/enterprise-sales-ai`
+- `NEXT_PUBLIC_API_URL=http://localhost:3001`
+- `NEXT_PUBLIC_ML_SERVICE_URL=http://localhost:8000`
 
 ### 3. Start MongoDB
 
+**Option A – Docker (easiest)**
+
 ```bash
-# Using Docker
+cd infrastructure
 docker-compose up -d mongodb
-
-# Or install MongoDB locally
+cd ..
 ```
 
-### 4. Start Development Servers
+**Option B – Local MongoDB**
+
+Install and start MongoDB, then ensure it’s running on `localhost:27017`.
+
+### 4. Start the app (3 terminals)
+
+**Terminal 1 – Frontend**
 
 ```bash
-# Start all services
-pnpm dev
-
-# Or start individually
 pnpm --filter web dev
-pnpm --filter api start:dev
-cd apps/ml-service && uvicorn main:app --reload
 ```
 
-### 5. Access Applications
+**Terminal 2 – API**
 
-- Frontend: http://localhost:3000
-- API: http://localhost:3001
-- ML Service: http://localhost:8000
-- API Docs: http://localhost:3001/api/docs
-- ML Service Docs: http://localhost:8000/docs
+```bash
+pnpm --filter api start:dev
+```
+
+**Terminal 3 – ML service**
+
+```bash
+cd apps/ml-service
+pip install -r requirements.txt
+uvicorn main:app --reload --port 8000
+```
+
+(On Windows you can use `py -m uvicorn main:app --reload --port 8000` if `uvicorn` isn’t on PATH.)
+
+### 5. Open in browser
+
+| App        | URL |
+|-----------|-----|
+| Frontend  | http://localhost:3000 |
+| API       | http://localhost:3001/api |
+| API docs  | http://localhost:3001/api (Swagger) |
+| ML service | http://localhost:8000 |
+| ML docs   | http://localhost:8000/docs |
+
+### Optional: one-time setup script (Linux/macOS/Git Bash)
+
+```bash
+chmod +x scripts/setup.sh
+./scripts/setup.sh
+```
+
+Then start MongoDB and the three services as above.
 
 ## Development
 
@@ -106,6 +139,27 @@ pnpm build
 ```bash
 docker-compose up -d
 ```
+
+## Deploy for free
+
+You can run this app at **$0/month** using free tiers:
+
+| Part        | Where to deploy        |
+|------------|------------------------|
+| **Frontend** | [Vercel](https://vercel.com) (Next.js) |
+| **API**      | [Render](https://render.com) or [Railway](https://railway.app) |
+| **ML service** | Render or Railway |
+| **Database**   | [MongoDB Atlas](https://www.mongodb.com/cloud/atlas) (free M0 cluster) |
+
+**Step-by-step:** see **[docs/DEPLOYMENT-FREE.md](docs/DEPLOYMENT-FREE.md)** for:
+
+- MongoDB Atlas setup
+- Vercel (frontend) with monorepo
+- Render (API + ML) or Railway
+- Environment variables and CORS
+- Optional `render.yaml` blueprint
+
+Quick links: [Vercel](https://vercel.com) · [Render](https://render.com) · [Railway](https://railway.app) · [MongoDB Atlas](https://www.mongodb.com/cloud/atlas)
 
 ## License
 

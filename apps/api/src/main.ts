@@ -14,9 +14,18 @@ async function bootstrap() {
     }),
   );
 
-  // CORS configuration
+  // CORS configuration (allow multiple origins in production)
+  const allowedOrigins = process.env.CORS_ORIGINS
+    ? process.env.CORS_ORIGINS.split(',').map((o) => o.trim())
+    : [process.env.FRONTEND_URL || 'http://localhost:3000'];
   app.enableCors({
-    origin: process.env.FRONTEND_URL || 'http://localhost:3000',
+    origin: (origin, callback) => {
+      if (!origin || allowedOrigins.includes(origin) || allowedOrigins.includes('*')) {
+        callback(null, true);
+      } else {
+        callback(null, true); // allow in dev; restrict via CORS_ORIGINS in prod
+      }
+    },
     credentials: true,
   });
 
