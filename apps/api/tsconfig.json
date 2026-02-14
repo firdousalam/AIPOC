@@ -2,6 +2,7 @@
   "extends": "../../tsconfig.base.json",
   "compilerOptions": {
     "module": "commonjs",
+    "moduleResolution": "node",
     "declaration": true,
     "removeComments": true,
     "emitDecoratorMetadata": true,
@@ -25,4 +26,3 @@
   "include": ["src/**/*"],
   "exclude": ["node_modules", "dist", "test"]
 }
-

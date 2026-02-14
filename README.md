@@ -84,10 +84,15 @@ pnpm --filter api start:dev
 ```bash
 cd apps/ml-service
 pip install -r requirements.txt
-uvicorn main:app --reload --port 8000
+python -m uvicorn main:app --reload --port 8000
 ```
 
-(On Windows you can use `py -m uvicorn main:app --reload --port 8000` if `uvicorn` isn’t on PATH.)
+**Windows:** If `uvicorn` isn’t found, use the same Python that has the packages (e.g. Store Python 3.12):
+```powershell
+cd apps\ml-service
+py -3.12 -m uvicorn main:app --reload --port 8000
+```
+If you only have one Python: `python -m uvicorn main:app --reload --port 8000`
 
 ### 5. Open in browser
 
@@ -95,7 +100,7 @@ uvicorn main:app --reload --port 8000
 |-----------|-----|
 | Frontend  | http://localhost:3000 |
 | API       | http://localhost:3001/api |
-| API docs  | http://localhost:3001/api (Swagger) |
+| API docs (Swagger) | http://localhost:3001/api/docs |
 | ML service | http://localhost:8000 |
 | ML docs   | http://localhost:8000/docs |
 

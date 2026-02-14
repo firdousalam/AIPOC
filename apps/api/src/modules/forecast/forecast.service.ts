@@ -19,7 +19,8 @@ export class ForecastService {
       );
       return response.data;
     } catch (error) {
-      throw new Error(`ML Service error: ${error.message}`);
+      const message = error instanceof Error ? error.message : String(error);
+      throw new Error(`ML Service error: ${message}`);
     }
   }
 }
