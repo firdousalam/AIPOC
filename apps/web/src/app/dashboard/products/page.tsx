@@ -6,6 +6,7 @@ import apiClient from '@/services/api/client';
 
 interface Product {
     _id: string;
+    productId?: string;
     name?: string;
     description?: string;
     price?: number;
@@ -28,6 +29,7 @@ export default function ProductsPage() {
     const [loading, setLoading] = useState(true);
     const [showAddModal, setShowAddModal] = useState(false);
     const [showEditModal, setShowEditModal] = useState(false);
+    const [showViewModal, setShowViewModal] = useState(false);
     const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
     const [error, setError] = useState('');
 
@@ -35,8 +37,12 @@ export default function ProductsPage() {
     const [searchTerm, setSearchTerm] = useState('');
     const [currentPage, setCurrentPage] = useState(1);
     const [itemsPerPage, setItemsPerPage] = useState(20);
+    const [startDate, setStartDate] = useState('');
+    const [endDate, setEndDate] = useState('');
+    const [searchLoading, setSearchLoading] = useState(false);
 
     const tableRef = useRef<HTMLDivElement>(null);
+    const searchTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
     const canEdit = user?.userType === 'super' || user?.userType === 'admin';
 
@@ -44,36 +50,56 @@ export default function ProductsPage() {
         fetchProducts();
     }, []);
 
+    // Debounced search effect
     useEffect(() => {
-        // Filter products based on search term
-        if (searchTerm.trim() === '') {
-            setFilteredProducts(products);
-        } else {
-            const filtered = products.filter(product =>
-                product.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                product._id.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                product.category?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                product.company?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                product.distributor?.toLowerCase().includes(searchTerm.toLowerCase())
-            );
-            setFilteredProducts(filtered);
+        // Clear existing timeout
+        if (searchTimeoutRef.current) {
+            clearTimeout(searchTimeoutRef.current);
         }
-        setCurrentPage(1); // Reset to first page when searching
-    }, [searchTerm, products]);
+
+        // Set new timeout for debounced search
+        searchTimeoutRef.current = setTimeout(() => {
+            fetchProducts();
+        }, 500);
+
+        // Cleanup function
+        return () => {
+            if (searchTimeoutRef.current) {
+                clearTimeout(searchTimeoutRef.current);
+            }
+        };
+    }, [searchTerm]);
+
+    useEffect(() => {
+        // Filter products based on search term (removed - now handled by API)
+        setFilteredProducts(products);
+        setCurrentPage(1); // Reset to first page when data changes
+    }, [products]);
 
     const fetchProducts = async () => {
         try {
-            setLoading(true);
+            setSearchLoading(true);
             setError('');
-            const response = await apiClient.get('/api/products');
+
+            // Build query parameters
+            const params: any = {};
+            if (searchTerm.trim()) params.search = searchTerm.trim();
+            if (startDate) params.startDate = startDate;
+            if (endDate) params.endDate = endDate;
+
+            const response = await apiClient.get('/api/products', { params });
             setProducts(response.data);
             setFilteredProducts(response.data);
         } catch (err: any) {
             console.error('Error fetching products:', err);
             setError(err.response?.data?.message || 'Failed to fetch products');
         } finally {
-            setLoading(false);
+            setSearchLoading(false);
         }
+    };
+
+    const handleDateSearch = () => {
+        fetchProducts();
     };
 
     const handleDelete = async (productId: string) => {
@@ -92,6 +118,53 @@ export default function ProductsPage() {
     const handleEdit = (product: Product) => {
         setSelectedProduct(product);
         setShowEditModal(true);
+    };
+
+    const handleView = (product: Product) => {
+        setSelectedProduct(product);
+        setShowViewModal(true);
+    };
+
+    const handleExportToExcel = () => {
+        // Prepare data for export
+        const exportData = filteredProducts.map(product => ({
+            'Product ID': product.productId || 'N/A',
+            'Name': product.name || 'N/A',
+            'Description': product.description || 'No description',
+            'Category': product.category || 'Uncategorized',
+            'Company': product.company || 'N/A',
+            'Distributor': product.distributor || 'N/A',
+            'Stock': product.stock || 0,
+            'MRP': product.mrp ? `$${product.mrp.toFixed(2)}` : 'N/A',
+            'Sale Price': product.salePrice ? `$${product.salePrice.toFixed(2)}` : 'N/A',
+            'Price': product.price ? `$${product.price.toFixed(2)}` : 'N/A',
+            'Discount': product.discount ? `${product.discount}%` : 'N/A',
+            'Created At': product.createdAt ? new Date(product.createdAt).toLocaleDateString() : 'N/A',
+        }));
+
+        // Convert to CSV
+        const headers = Object.keys(exportData[0] || {});
+        const csvContent = [
+            headers.join(','),
+            ...exportData.map(row =>
+                headers.map(header => {
+                    const value = row[header as keyof typeof row];
+                    // Escape commas and quotes in values
+                    return `"${String(value).replace(/"/g, '""')}"`;
+                }).join(',')
+            )
+        ].join('\n');
+
+        // Create blob and download
+        const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+        const link = document.createElement('a');
+        const url = URL.createObjectURL(blob);
+        link.setAttribute('href', url);
+        link.setAttribute('download', `products_${new Date().toISOString().split('T')[0]}.csv`);
+        link.style.visibility = 'hidden';
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
     };
 
     // Pagination logic
@@ -123,15 +196,25 @@ export default function ProductsPage() {
                     <h1 className="text-2xl font-bold text-gray-900">Products</h1>
                     <p className="text-gray-600">Manage your product catalog</p>
                 </div>
-                {canEdit && (
+                <div className="flex gap-3">
                     <button
-                        onClick={() => setShowAddModal(true)}
-                        className="bg-indigo-600 text-white px-4 py-2 rounded-lg hover:bg-indigo-700 transition-colors flex items-center"
+                        onClick={handleExportToExcel}
+                        className="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 transition-colors flex items-center"
+                        disabled={filteredProducts.length === 0}
                     >
-                        <span className="mr-2">➕</span>
-                        Add Product
+                        <span className="mr-2">📥</span>
+                        Export to Excel
                     </button>
-                )}
+                    {canEdit && (
+                        <button
+                            onClick={() => setShowAddModal(true)}
+                            className="bg-indigo-600 text-white px-4 py-2 rounded-lg hover:bg-indigo-700 transition-colors flex items-center"
+                        >
+                            <span className="mr-2">➕</span>
+                            Add Product
+                        </button>
+                    )}
+                </div>
             </div>
 
             {/* Error Message */}
@@ -146,44 +229,76 @@ export default function ProductsPage() {
 
             {/* Search and Filters */}
             <div className="bg-white rounded-lg shadow p-4">
-                <div className="flex flex-col md:flex-row gap-4 items-center justify-between">
-                    {/* Search */}
-                    <div className="flex-1 w-full md:w-auto">
-                        <div className="relative">
-                            <input
-                                type="text"
-                                placeholder="Search by name, ID, category, company..."
-                                value={searchTerm}
-                                onChange={(e) => setSearchTerm(e.target.value)}
-                                className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                            />
-                            <span className="absolute left-3 top-2.5 text-gray-400">🔍</span>
+                <div className="flex flex-col gap-4">
+                    {/* Search and Date Filters Row */}
+                    <div className="flex flex-col md:flex-row gap-4 items-end">
+                        {/* Search */}
+                        <div className="flex-1 w-full md:w-auto">
+                            <label className="block text-sm font-medium text-gray-700 mb-2">
+                                Search Products
+                            </label>
+                            <div className="relative">
+                                <input
+                                    type="text"
+                                    placeholder="Search by name, product ID, category, company..."
+                                    value={searchTerm}
+                                    onChange={(e) => setSearchTerm(e.target.value)}
+                                    className="w-full pl-10 pr-10 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                                />
+                                <span className="absolute left-3 top-2.5 text-gray-400">🔍</span>
+                                {searchLoading && (
+                                    <div className="absolute right-3 top-2.5">
+                                        <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-indigo-600"></div>
+                                    </div>
+                                )}
+                            </div>
+                            <p className="text-xs text-gray-500 mt-1">
+                                Results update automatically as you type (500ms delay)
+                            </p>
+                        </div>
+
+                        {/* Date Range Filters */}
+                        <div className="flex gap-2 items-end">
+                            <div>
+                                <label className="block text-sm font-medium text-gray-700 mb-2">From Date</label>
+                                <input
+                                    type="date"
+                                    value={startDate}
+                                    onChange={(e) => setStartDate(e.target.value)}
+                                    className="px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                                />
+                            </div>
+                            <div>
+                                <label className="block text-sm font-medium text-gray-700 mb-2">To Date</label>
+                                <input
+                                    type="date"
+                                    value={endDate}
+                                    onChange={(e) => setEndDate(e.target.value)}
+                                    className="px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                                />
+                            </div>
+                            <button
+                                onClick={handleDateSearch}
+                                disabled={!startDate && !endDate}
+                                className="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                            >
+                                Search
+                            </button>
+                            {(startDate || endDate) && (
+                                <button
+                                    onClick={() => {
+                                        setStartDate('');
+                                        setEndDate('');
+                                        fetchProducts();
+                                    }}
+                                    className="px-3 py-2 text-sm text-red-600 hover:text-red-800 border border-red-300 rounded-lg hover:bg-red-50 transition-colors"
+                                    title="Clear date filters"
+                                >
+                                    Clear
+                                </button>
+                            )}
                         </div>
                     </div>
-
-                    {/* Items per page */}
-                    <div className="flex items-center gap-2">
-                        <label className="text-sm text-gray-600">Show:</label>
-                        <select
-                            value={itemsPerPage}
-                            onChange={(e) => {
-                                setItemsPerPage(Number(e.target.value));
-                                setCurrentPage(1);
-                            }}
-                            className="border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                        >
-                            <option value={20}>20</option>
-                            <option value={50}>50</option>
-                            <option value={100}>100</option>
-                        </select>
-                        <span className="text-sm text-gray-600">per page</span>
-                    </div>
-                </div>
-
-                {/* Results count */}
-                <div className="mt-3 text-sm text-gray-600">
-                    Showing {indexOfFirstItem + 1} to {Math.min(indexOfLastItem, filteredProducts.length)} of {filteredProducts.length} products
-                    {searchTerm && ` (filtered from ${products.length} total)`}
                 </div>
             </div>
 
@@ -193,6 +308,9 @@ export default function ProductsPage() {
                     <table className="min-w-full divide-y divide-gray-200">
                         <thead className="bg-gray-50">
                             <tr>
+                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                    Product ID
+                                </th>
                                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                                     Product
                                 </th>
@@ -218,6 +336,11 @@ export default function ProductsPage() {
                         <tbody className="bg-white divide-y divide-gray-200">
                             {currentItems.map((product) => (
                                 <tr key={product._id} className="hover:bg-gray-50 transition-colors">
+                                    <td className="px-6 py-4 whitespace-nowrap">
+                                        <div className="text-sm font-semibold text-indigo-600">
+                                            {product.productId || 'N/A'}
+                                        </div>
+                                    </td>
                                     <td className="px-6 py-4">
                                         <div>
                                             <div className="text-sm font-medium text-gray-900">
@@ -225,9 +348,6 @@ export default function ProductsPage() {
                                             </div>
                                             <div className="text-sm text-gray-500 truncate max-w-xs">
                                                 {product.description || 'No description'}
-                                            </div>
-                                            <div className="text-xs text-gray-400 mt-1">
-                                                ID: {product._id}
                                             </div>
                                         </div>
                                     </td>
@@ -284,8 +404,14 @@ export default function ProductsPage() {
                                     {canEdit && (
                                         <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
                                             <button
+                                                onClick={() => handleView(product)}
+                                                className="text-blue-600 hover:text-blue-900 mr-3"
+                                            >
+                                                View
+                                            </button>
+                                            <button
                                                 onClick={() => handleEdit(product)}
-                                                className="text-indigo-600 hover:text-indigo-900 mr-4"
+                                                className="text-indigo-600 hover:text-indigo-900 mr-3"
                                             >
                                                 Edit
                                             </button>
@@ -313,83 +439,94 @@ export default function ProductsPage() {
             </div>
 
             {/* Pagination */}
-            {totalPages > 1 && (
-                <div className="bg-white rounded-lg shadow px-4 py-3 flex items-center justify-between">
-                    <div className="flex-1 flex justify-between sm:hidden">
-                        <button
-                            onClick={() => handlePageChange(currentPage - 1)}
-                            disabled={currentPage === 1}
-                            className="relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
-                        >
-                            Previous
-                        </button>
-                        <button
-                            onClick={() => handlePageChange(currentPage + 1)}
-                            disabled={currentPage === totalPages}
-                            className="ml-3 relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
-                        >
-                            Next
-                        </button>
-                    </div>
-                    <div className="hidden sm:flex-1 sm:flex sm:items-center sm:justify-between">
-                        <div>
-                            <p className="text-sm text-gray-700">
-                                Page <span className="font-medium">{currentPage}</span> of{' '}
-                                <span className="font-medium">{totalPages}</span>
-                            </p>
+            {filteredProducts.length > 0 && (
+                <div className="bg-white rounded-lg shadow px-4 py-3">
+                    <div className="flex flex-col sm:flex-row gap-4 items-center justify-between">
+                        {/* Left side - Items per page */}
+                        <div className="flex items-center gap-2">
+                            <label className="text-sm text-gray-600">Show:</label>
+                            <select
+                                value={itemsPerPage}
+                                onChange={(e) => {
+                                    setItemsPerPage(Number(e.target.value));
+                                    setCurrentPage(1);
+                                }}
+                                className="border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                            >
+                                <option value={20}>20</option>
+                                <option value={50}>50</option>
+                                <option value={100}>100</option>
+                            </select>
+                            <span className="text-sm text-gray-600">per page</span>
                         </div>
-                        <div>
-                            <nav className="relative z-0 inline-flex rounded-md shadow-sm -space-x-px">
-                                <button
-                                    onClick={() => handlePageChange(currentPage - 1)}
-                                    disabled={currentPage === 1}
-                                    className="relative inline-flex items-center px-2 py-2 rounded-l-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
-                                >
-                                    ‹
-                                </button>
-                                {[...Array(totalPages)].map((_, index) => {
-                                    const pageNumber = index + 1;
-                                    // Show first page, last page, current page, and pages around current
-                                    if (
-                                        pageNumber === 1 ||
-                                        pageNumber === totalPages ||
-                                        (pageNumber >= currentPage - 1 && pageNumber <= currentPage + 1)
-                                    ) {
-                                        return (
-                                            <button
-                                                key={pageNumber}
-                                                onClick={() => handlePageChange(pageNumber)}
-                                                className={`relative inline-flex items-center px-4 py-2 border text-sm font-medium ${currentPage === pageNumber
-                                                    ? 'z-10 bg-indigo-50 border-indigo-500 text-indigo-600'
-                                                    : 'bg-white border-gray-300 text-gray-500 hover:bg-gray-50'
-                                                    }`}
-                                            >
-                                                {pageNumber}
-                                            </button>
-                                        );
-                                    } else if (
-                                        pageNumber === currentPage - 2 ||
-                                        pageNumber === currentPage + 2
-                                    ) {
-                                        return (
-                                            <span
-                                                key={pageNumber}
-                                                className="relative inline-flex items-center px-4 py-2 border border-gray-300 bg-white text-sm font-medium text-gray-700"
-                                            >
-                                                ...
-                                            </span>
-                                        );
-                                    }
-                                    return null;
-                                })}
-                                <button
-                                    onClick={() => handlePageChange(currentPage + 1)}
-                                    disabled={currentPage === totalPages}
-                                    className="relative inline-flex items-center px-2 py-2 rounded-r-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
-                                >
-                                    ›
-                                </button>
-                            </nav>
+
+                        {/* Right side - Page navigation and results count */}
+                        <div className="flex items-center gap-6">
+                            {/* Results count */}
+                            <div className="text-sm text-gray-600">
+                                Showing {filteredProducts.length > 0 ? indexOfFirstItem + 1 : 0} to {Math.min(indexOfLastItem, filteredProducts.length)} of {filteredProducts.length} products
+                            </div>
+
+                            {/* Page navigation */}
+                            {totalPages > 1 && (
+                                <div className="flex items-center gap-4">
+                                    <p className="text-sm text-gray-700">
+                                        Page <span className="font-medium">{currentPage}</span> of{' '}
+                                        <span className="font-medium">{totalPages}</span>
+                                    </p>
+                                    <nav className="relative z-0 inline-flex rounded-md shadow-sm -space-x-px">
+                                        <button
+                                            onClick={() => handlePageChange(currentPage - 1)}
+                                            disabled={currentPage === 1}
+                                            className="relative inline-flex items-center px-2 py-2 rounded-l-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                                        >
+                                            ‹
+                                        </button>
+                                        {[...Array(totalPages)].map((_, index) => {
+                                            const pageNumber = index + 1;
+                                            // Show first page, last page, current page, and pages around current
+                                            if (
+                                                pageNumber === 1 ||
+                                                pageNumber === totalPages ||
+                                                (pageNumber >= currentPage - 1 && pageNumber <= currentPage + 1)
+                                            ) {
+                                                return (
+                                                    <button
+                                                        key={pageNumber}
+                                                        onClick={() => handlePageChange(pageNumber)}
+                                                        className={`relative inline-flex items-center px-4 py-2 border text-sm font-medium ${currentPage === pageNumber
+                                                            ? 'z-10 bg-indigo-50 border-indigo-500 text-indigo-600'
+                                                            : 'bg-white border-gray-300 text-gray-500 hover:bg-gray-50'
+                                                            }`}
+                                                    >
+                                                        {pageNumber}
+                                                    </button>
+                                                );
+                                            } else if (
+                                                pageNumber === currentPage - 2 ||
+                                                pageNumber === currentPage + 2
+                                            ) {
+                                                return (
+                                                    <span
+                                                        key={pageNumber}
+                                                        className="relative inline-flex items-center px-4 py-2 border border-gray-300 bg-white text-sm font-medium text-gray-700"
+                                                    >
+                                                        ...
+                                                    </span>
+                                                );
+                                            }
+                                            return null;
+                                        })}
+                                        <button
+                                            onClick={() => handlePageChange(currentPage + 1)}
+                                            disabled={currentPage === totalPages}
+                                            className="relative inline-flex items-center px-2 py-2 rounded-r-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                                        >
+                                            ›
+                                        </button>
+                                    </nav>
+                                </div>
+                            )}
                         </div>
                     </div>
                 </div>
@@ -423,6 +560,17 @@ export default function ProductsPage() {
                     canEdit={canEdit}
                 />
             )}
+
+            {/* View Product Modal */}
+            {showViewModal && selectedProduct && (
+                <ProductViewModal
+                    product={selectedProduct}
+                    onClose={() => {
+                        setShowViewModal(false);
+                        setSelectedProduct(null);
+                    }}
+                />
+            )}
         </div>
     );
 }
@@ -453,6 +601,7 @@ function ProductModal({
     });
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState('');
+    const [nextProductId, setNextProductId] = useState<string>('');
 
     // Settings data
     const [categories, setCategories] = useState<Array<{ _id: string; name: string }>>([]);
@@ -462,7 +611,34 @@ function ProductModal({
 
     useEffect(() => {
         fetchSettings();
+        if (!product) {
+            fetchNextProductId();
+        }
     }, []);
+
+    const fetchNextProductId = async () => {
+        try {
+            const response = await apiClient.get('/api/products');
+            const products = response.data;
+
+            let nextNumber = 1;
+            if (products.length > 0) {
+                // Find the highest product number
+                const productNumbers = products
+                    .map((p: Product) => p.productId ? parseInt(p.productId.replace('PROD-', '')) : 0)
+                    .filter((num: number) => !isNaN(num));
+
+                if (productNumbers.length > 0) {
+                    nextNumber = Math.max(...productNumbers) + 1;
+                }
+            }
+
+            setNextProductId(`PROD-${String(nextNumber).padStart(4, '0')}`);
+        } catch (err: any) {
+            console.error('Error fetching next product ID:', err);
+            setNextProductId('PROD-0001');
+        }
+    };
 
     const fetchSettings = async () => {
         try {
@@ -540,6 +716,21 @@ function ProductModal({
                     )}
 
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        {/* Product ID - Display for both new and existing products */}
+                        <div className="md:col-span-2">
+                            <label className="block text-sm font-medium text-gray-700 mb-2">
+                                Product ID
+                            </label>
+                            <div className="w-full px-3 py-2 border border-gray-200 rounded-lg bg-gray-50 text-indigo-600 font-semibold">
+                                {product?.productId || nextProductId || 'Generating...'}
+                            </div>
+                            {!product && (
+                                <p className="text-xs text-gray-500 mt-1">
+                                    This ID will be automatically assigned when you create the product
+                                </p>
+                            )}
+                        </div>
+
                         {/* Name */}
                         <div className="md:col-span-2">
                             <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -726,6 +917,196 @@ function ProductModal({
                         </button>
                     </div>
                 </form>
+            </div>
+        </div>
+    );
+}
+
+
+// Product View Modal (Read-only)
+function ProductViewModal({
+    product,
+    onClose,
+}: {
+    product: Product;
+    onClose: () => void;
+}) {
+    return (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+            <div className="bg-white rounded-lg max-w-3xl w-full max-h-[90vh] overflow-y-auto">
+                <div className="sticky top-0 bg-white border-b border-gray-200 px-6 py-4">
+                    <div className="flex items-center justify-between">
+                        <h2 className="text-2xl font-bold text-gray-900">Product Details</h2>
+                        <button
+                            onClick={onClose}
+                            className="text-gray-400 hover:text-gray-600 text-2xl"
+                        >
+                            ✕
+                        </button>
+                    </div>
+                </div>
+
+                <div className="p-6">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        {/* Product ID */}
+                        <div className="md:col-span-2 bg-indigo-50 border border-indigo-200 rounded-lg p-4">
+                            <label className="block text-sm font-medium text-indigo-900 mb-1">
+                                Product ID
+                            </label>
+                            <div className="text-2xl font-bold text-indigo-600">
+                                {product.productId || 'N/A'}
+                            </div>
+                        </div>
+
+                        {/* Name */}
+                        <div className="md:col-span-2">
+                            <label className="block text-sm font-medium text-gray-700 mb-2">
+                                Product Name
+                            </label>
+                            <div className="text-lg font-semibold text-gray-900">
+                                {product.name || 'N/A'}
+                            </div>
+                        </div>
+
+                        {/* Description */}
+                        <div className="md:col-span-2">
+                            <label className="block text-sm font-medium text-gray-700 mb-2">
+                                Description
+                            </label>
+                            <div className="text-gray-900 bg-gray-50 p-3 rounded-lg">
+                                {product.description || 'No description'}
+                            </div>
+                        </div>
+
+                        {/* Category */}
+                        <div>
+                            <label className="block text-sm font-medium text-gray-700 mb-2">
+                                Category
+                            </label>
+                            <div className="text-gray-900">
+                                <span className="px-3 py-1 inline-flex text-sm font-semibold rounded-full bg-blue-100 text-blue-800">
+                                    {product.category || 'Uncategorized'}
+                                </span>
+                            </div>
+                        </div>
+
+                        {/* Stock */}
+                        <div>
+                            <label className="block text-sm font-medium text-gray-700 mb-2">
+                                Stock Quantity
+                            </label>
+                            <div className="text-gray-900">
+                                <span
+                                    className={`px-3 py-1 inline-flex text-sm font-semibold rounded-full ${(product.stock || 0) < 20
+                                        ? 'bg-red-100 text-red-800'
+                                        : (product.stock || 0) < 50
+                                            ? 'bg-yellow-100 text-yellow-800'
+                                            : 'bg-green-100 text-green-800'
+                                        }`}
+                                >
+                                    {product.stock || 0} units
+                                </span>
+                            </div>
+                        </div>
+
+                        {/* Company */}
+                        <div>
+                            <label className="block text-sm font-medium text-gray-700 mb-2">
+                                Company/Manufacturer
+                            </label>
+                            <div className="text-gray-900 font-medium">
+                                {product.company || 'N/A'}
+                            </div>
+                        </div>
+
+                        {/* Distributor */}
+                        <div>
+                            <label className="block text-sm font-medium text-gray-700 mb-2">
+                                Distributor
+                            </label>
+                            <div className="text-gray-900 font-medium">
+                                {product.distributor || 'N/A'}
+                            </div>
+                        </div>
+
+                        {/* Pricing Section */}
+                        <div className="md:col-span-2 border-t border-gray-200 pt-4 mt-2">
+                            <h3 className="text-lg font-semibold text-gray-900 mb-4">Pricing Information</h3>
+                            <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+                                {/* MRP */}
+                                <div>
+                                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                                        MRP
+                                    </label>
+                                    <div className="text-lg font-semibold text-gray-900">
+                                        {product.mrp ? `$${product.mrp.toFixed(2)}` : 'N/A'}
+                                    </div>
+                                </div>
+
+                                {/* Sale Price */}
+                                <div>
+                                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                                        Sale Price
+                                    </label>
+                                    <div className="text-lg font-semibold text-green-600">
+                                        {product.salePrice ? `$${product.salePrice.toFixed(2)}` : 'N/A'}
+                                    </div>
+                                </div>
+
+                                {/* Price */}
+                                <div>
+                                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                                        Price
+                                    </label>
+                                    <div className="text-lg font-semibold text-gray-900">
+                                        {product.price ? `$${product.price.toFixed(2)}` : 'N/A'}
+                                    </div>
+                                </div>
+
+                                {/* Discount */}
+                                <div>
+                                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                                        Discount
+                                    </label>
+                                    <div className="text-lg font-semibold text-orange-600">
+                                        {product.discount ? `${product.discount}%` : 'N/A'}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* Timestamps */}
+                        <div className="md:col-span-2 border-t border-gray-200 pt-4 mt-2">
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <div>
+                                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                                        Created At
+                                    </label>
+                                    <div className="text-sm text-gray-600">
+                                        {product.createdAt ? new Date(product.createdAt).toLocaleString() : 'N/A'}
+                                    </div>
+                                </div>
+                                <div>
+                                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                                        Last Updated
+                                    </label>
+                                    <div className="text-sm text-gray-600">
+                                        {product.updatedAt ? new Date(product.updatedAt).toLocaleString() : 'N/A'}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div className="flex justify-end mt-6 pt-4 border-t border-gray-200">
+                        <button
+                            onClick={onClose}
+                            className="px-6 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition-colors"
+                        >
+                            Close
+                        </button>
+                    </div>
+                </div>
             </div>
         </div>
     );

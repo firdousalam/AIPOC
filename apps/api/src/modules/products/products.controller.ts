@@ -6,6 +6,7 @@ import {
   Delete,
   Body,
   Param,
+  Query,
   UseGuards,
   UsePipes,
   ValidationPipe,
@@ -51,8 +52,12 @@ export class ProductsController {
   @ApiOperation({ summary: API_DOCS.PRODUCT.GET_ALL_SUMMARY })
   @ApiResponse({ status: HTTP_STATUS.OK, description: API_DOCS.PRODUCT.LIST_SUCCESS })
   @ApiResponse({ status: HTTP_STATUS.UNAUTHORIZED, description: API_DOCS.COMMON.UNAUTHORIZED })
-  findAll() {
-    return this.productsService.findAll();
+  findAll(
+    @Query('search') search?: string,
+    @Query('startDate') startDate?: string,
+    @Query('endDate') endDate?: string,
+  ) {
+    return this.productsService.findAll(search, startDate, endDate);
   }
 
   @Get(':id')
