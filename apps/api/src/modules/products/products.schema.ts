@@ -5,20 +5,41 @@ export type ProductDocument = Product & Document;
 
 @Schema({ timestamps: true })
 export class Product {
-  @Prop({ required: true })
-  name: string;
+  @Prop({ unique: true })
+  productId?: string;
+
+  @Prop()
+  name?: string;
 
   @Prop()
   description?: string;
 
-  @Prop({ required: true })
-  price: number;
+  @Prop()
+  price?: number;
 
-  @Prop({ required: true })
-  category: string;
+  @Prop()
+  category?: string;
 
   @Prop({ default: 0 })
-  stock: number;
+  stock?: number;
+
+  @Prop()
+  distributor?: string;
+
+  @Prop()
+  company?: string;
+
+  @Prop()
+  mrp?: number;
+
+  @Prop()
+  salePrice?: number;
+
+  @Prop()
+  discount?: number;
+
+  @Prop({ default: 'active', enum: ['active', 'inactive'] })
+  status: string;
 }
 
 export const ProductSchema = SchemaFactory.createForClass(Product);
