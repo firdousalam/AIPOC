@@ -79,6 +79,7 @@ export default function ProductsPage() {
     const fetchProducts = async () => {
         try {
             setSearchLoading(true);
+            setLoading(false); // Hide initial loading screen
             setError('');
 
             // Build query parameters
@@ -100,6 +101,33 @@ export default function ProductsPage() {
 
     const handleDateSearch = () => {
         fetchProducts();
+    };
+
+    const handleClearDates = () => {
+        setStartDate('');
+        setEndDate('');
+        // Fetch products without date filters
+        const fetchWithoutDates = async () => {
+            try {
+                setSearchLoading(true);
+                setLoading(false);
+                setError('');
+
+                // Build query parameters without dates
+                const params: any = {};
+                if (searchTerm.trim()) params.search = searchTerm.trim();
+
+                const response = await apiClient.get('/api/products', { params });
+                setProducts(response.data);
+                setFilteredProducts(response.data);
+            } catch (err: any) {
+                console.error('Error fetching products:', err);
+                setError(err.response?.data?.message || 'Failed to fetch products');
+            } finally {
+                setSearchLoading(false);
+            }
+        };
+        fetchWithoutDates();
     };
 
     const handleDelete = async (productId: string) => {
@@ -191,15 +219,15 @@ export default function ProductsPage() {
     return (
         <div className="space-y-6">
             {/* Header */}
-            <div className="flex justify-between items-center">
+            <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4">
                 <div>
                     <h1 className="text-2xl font-bold text-gray-900">Products</h1>
-                    <p className="text-gray-600">Manage your product catalog</p>
+                    <p className="text-gray-600 text-sm sm:text-base">Manage your product catalog</p>
                 </div>
-                <div className="flex gap-3">
+                <div className="flex flex-col sm:flex-row gap-3">
                     <button
                         onClick={handleExportToExcel}
-                        className="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 transition-colors flex items-center"
+                        className="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 transition-colors flex items-center justify-center"
                         disabled={filteredProducts.length === 0}
                     >
                         <span className="mr-2">📥</span>
@@ -208,7 +236,7 @@ export default function ProductsPage() {
                     {canEdit && (
                         <button
                             onClick={() => setShowAddModal(true)}
-                            className="bg-indigo-600 text-white px-4 py-2 rounded-lg hover:bg-indigo-700 transition-colors flex items-center"
+                            className="bg-indigo-600 text-white px-4 py-2 rounded-lg hover:bg-indigo-700 transition-colors flex items-center justify-center"
                         >
                             <span className="mr-2">➕</span>
                             Add Product
@@ -231,9 +259,9 @@ export default function ProductsPage() {
             <div className="bg-white rounded-lg shadow p-4">
                 <div className="flex flex-col gap-4">
                     {/* Search and Date Filters Row */}
-                    <div className="flex flex-col md:flex-row gap-4 items-end">
+                    <div className="flex flex-col lg:flex-row gap-4 items-stretch lg:items-end">
                         {/* Search */}
-                        <div className="flex-1 w-full md:w-auto">
+                        <div className="flex-1 w-full">
                             <label className="block text-sm font-medium text-gray-700 mb-2">
                                 Search Products
                             </label>
@@ -252,51 +280,47 @@ export default function ProductsPage() {
                                     </div>
                                 )}
                             </div>
-                            <p className="text-xs text-gray-500 mt-1">
-                                Results update automatically as you type (500ms delay)
-                            </p>
+
                         </div>
 
                         {/* Date Range Filters */}
-                        <div className="flex gap-2 items-end">
-                            <div>
+                        <div className="flex flex-col sm:flex-row gap-2 items-stretch sm:items-end">
+                            <div className="flex-1 sm:flex-none">
                                 <label className="block text-sm font-medium text-gray-700 mb-2">From Date</label>
                                 <input
                                     type="date"
                                     value={startDate}
                                     onChange={(e) => setStartDate(e.target.value)}
-                                    className="px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
                                 />
                             </div>
-                            <div>
+                            <div className="flex-1 sm:flex-none">
                                 <label className="block text-sm font-medium text-gray-700 mb-2">To Date</label>
                                 <input
                                     type="date"
                                     value={endDate}
                                     onChange={(e) => setEndDate(e.target.value)}
-                                    className="px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
                                 />
                             </div>
-                            <button
-                                onClick={handleDateSearch}
-                                disabled={!startDate && !endDate}
-                                className="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-                            >
-                                Search
-                            </button>
-                            {(startDate || endDate) && (
+                            <div className="flex gap-2">
                                 <button
-                                    onClick={() => {
-                                        setStartDate('');
-                                        setEndDate('');
-                                        fetchProducts();
-                                    }}
-                                    className="px-3 py-2 text-sm text-red-600 hover:text-red-800 border border-red-300 rounded-lg hover:bg-red-50 transition-colors"
-                                    title="Clear date filters"
+                                    onClick={handleDateSearch}
+                                    disabled={!startDate && !endDate}
+                                    className="flex-1 sm:flex-none px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
                                 >
-                                    Clear
+                                    Search
                                 </button>
-                            )}
+                                {(startDate || endDate) && (
+                                    <button
+                                        onClick={handleClearDates}
+                                        className="flex-1 sm:flex-none px-3 py-2 text-sm text-red-600 hover:text-red-800 border border-red-300 rounded-lg hover:bg-red-50 transition-colors"
+                                        title="Clear date filters"
+                                    >
+                                        Clear
+                                    </button>
+                                )}
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -304,7 +328,8 @@ export default function ProductsPage() {
 
             {/* Products Table */}
             <div ref={tableRef} className="bg-white rounded-lg shadow overflow-hidden">
-                <div className="overflow-x-auto">
+                {/* Desktop Table */}
+                <div className="hidden md:block overflow-x-auto">
                     <table className="min-w-full divide-y divide-gray-200">
                         <thead className="bg-gray-50">
                             <tr>
@@ -427,6 +452,84 @@ export default function ProductsPage() {
                             ))}
                         </tbody>
                     </table>
+                </div>
+
+                {/* Mobile Cards */}
+                <div className="md:hidden divide-y divide-gray-200">
+                    {currentItems.map((product) => (
+                        <div key={product._id} className="p-4 hover:bg-gray-50 transition-colors">
+                            <div className="flex justify-between items-start mb-2">
+                                <div className="flex-1">
+                                    <div className="text-sm font-semibold text-indigo-600 mb-1">
+                                        {product.productId || 'N/A'}
+                                    </div>
+                                    <div className="text-base font-medium text-gray-900">
+                                        {product.name || 'N/A'}
+                                    </div>
+                                </div>
+                                <span className="px-2 py-1 text-xs font-semibold rounded-full bg-blue-100 text-blue-800">
+                                    {product.category || 'Uncategorized'}
+                                </span>
+                            </div>
+
+                            <div className="text-sm text-gray-500 mb-3 line-clamp-2">
+                                {product.description || 'No description'}
+                            </div>
+
+                            <div className="grid grid-cols-2 gap-3 mb-3">
+                                <div>
+                                    <div className="text-xs text-gray-500">Price</div>
+                                    <div className="text-sm font-semibold text-gray-900">
+                                        {product.salePrice ? `$${product.salePrice.toFixed(2)}` : product.price ? `$${product.price.toFixed(2)}` : 'N/A'}
+                                    </div>
+                                </div>
+                                <div>
+                                    <div className="text-xs text-gray-500">Stock</div>
+                                    <span
+                                        className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${(product.stock || 0) < 20
+                                            ? 'bg-red-100 text-red-800'
+                                            : (product.stock || 0) < 50
+                                                ? 'bg-yellow-100 text-yellow-800'
+                                                : 'bg-green-100 text-green-800'
+                                            }`}
+                                    >
+                                        {product.stock || 0}
+                                    </span>
+                                </div>
+                                <div>
+                                    <div className="text-xs text-gray-500">Company</div>
+                                    <div className="text-sm text-gray-900">{product.company || 'N/A'}</div>
+                                </div>
+                                <div>
+                                    <div className="text-xs text-gray-500">Distributor</div>
+                                    <div className="text-sm text-gray-900">{product.distributor || 'N/A'}</div>
+                                </div>
+                            </div>
+
+                            {canEdit && (
+                                <div className="flex gap-2 pt-3 border-t border-gray-200">
+                                    <button
+                                        onClick={() => handleView(product)}
+                                        className="flex-1 px-3 py-2 text-sm text-blue-600 border border-blue-300 rounded-lg hover:bg-blue-50"
+                                    >
+                                        View
+                                    </button>
+                                    <button
+                                        onClick={() => handleEdit(product)}
+                                        className="flex-1 px-3 py-2 text-sm text-indigo-600 border border-indigo-300 rounded-lg hover:bg-indigo-50"
+                                    >
+                                        Edit
+                                    </button>
+                                    <button
+                                        onClick={() => handleDelete(product._id)}
+                                        className="flex-1 px-3 py-2 text-sm text-red-600 border border-red-300 rounded-lg hover:bg-red-50"
+                                    >
+                                        Delete
+                                    </button>
+                                </div>
+                            )}
+                        </div>
+                    ))}
                 </div>
 
                 {currentItems.length === 0 && (

@@ -64,7 +64,7 @@ export class ProductsService {
       }
     }
 
-    return this.productModel.find(query).exec();
+    return this.productModel.find(query).sort({ createdAt: -1 }).exec();
   }
 
   async findOne(id: string): Promise<Product> {

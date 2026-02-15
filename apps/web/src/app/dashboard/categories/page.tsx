@@ -77,10 +77,10 @@ export default function CategoriesPage() {
     return (
         <div className="space-y-6">
             {/* Header */}
-            <div className="flex justify-between items-center">
+            <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4">
                 <div>
                     <h1 className="text-2xl font-bold text-gray-900">Categories</h1>
-                    <p className="text-gray-600">Manage product categories</p>
+                    <p className="text-gray-600 text-sm sm:text-base">Manage product categories</p>
                 </div>
                 {canEdit && (
                     <button
@@ -88,7 +88,7 @@ export default function CategoriesPage() {
                             setEditingCategory(null);
                             setShowModal(true);
                         }}
-                        className="bg-indigo-600 text-white px-4 py-2 rounded-lg hover:bg-indigo-700 transition-colors flex items-center"
+                        className="bg-indigo-600 text-white px-4 py-2 rounded-lg hover:bg-indigo-700 transition-colors flex items-center justify-center"
                     >
                         <span className="mr-2">➕</span>
                         Add Category
@@ -122,7 +122,8 @@ export default function CategoriesPage() {
 
             {/* Categories Table */}
             <div className="bg-white rounded-lg shadow overflow-hidden">
-                <div className="overflow-x-auto">
+                {/* Desktop Table */}
+                <div className="hidden md:block overflow-x-auto">
                     <table className="min-w-full divide-y divide-gray-200">
                         <thead className="bg-gray-50">
                             <tr>
@@ -180,6 +181,44 @@ export default function CategoriesPage() {
                             ))}
                         </tbody>
                     </table>
+                </div>
+
+                {/* Mobile Cards */}
+                <div className="md:hidden divide-y divide-gray-200">
+                    {filteredCategories.map((category) => (
+                        <div key={category._id} className="p-4 hover:bg-gray-50 transition-colors">
+                            <div className="flex justify-between items-start mb-2">
+                                <div className="flex-1">
+                                    <div className="text-base font-medium text-gray-900 mb-1">
+                                        {category.name}
+                                    </div>
+                                    <div className="text-sm text-gray-600 mb-2">
+                                        {category.description || 'No description'}
+                                    </div>
+                                    <div className="text-xs text-gray-500">
+                                        Created: {category.createdAt ? new Date(category.createdAt).toLocaleDateString() : 'N/A'}
+                                    </div>
+                                </div>
+                            </div>
+
+                            {canEdit && (
+                                <div className="flex gap-2 pt-3 border-t border-gray-200 mt-3">
+                                    <button
+                                        onClick={() => handleEdit(category)}
+                                        className="flex-1 px-3 py-2 text-sm text-indigo-600 border border-indigo-300 rounded-lg hover:bg-indigo-50"
+                                    >
+                                        Edit
+                                    </button>
+                                    <button
+                                        onClick={() => handleDelete(category._id)}
+                                        className="flex-1 px-3 py-2 text-sm text-red-600 border border-red-300 rounded-lg hover:bg-red-50"
+                                    >
+                                        Delete
+                                    </button>
+                                </div>
+                            )}
+                        </div>
+                    ))}
                 </div>
 
                 {filteredCategories.length === 0 && (

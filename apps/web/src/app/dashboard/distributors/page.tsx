@@ -83,10 +83,10 @@ export default function DistributorsPage() {
     return (
         <div className="space-y-6">
             {/* Header */}
-            <div className="flex justify-between items-center">
+            <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4">
                 <div>
                     <h1 className="text-2xl font-bold text-gray-900">Distributors</h1>
-                    <p className="text-gray-600">Manage distributors and suppliers</p>
+                    <p className="text-gray-600 text-sm sm:text-base">Manage distributors and suppliers</p>
                 </div>
                 {canEdit && (
                     <button
@@ -94,7 +94,7 @@ export default function DistributorsPage() {
                             setEditingDistributor(null);
                             setShowModal(true);
                         }}
-                        className="bg-indigo-600 text-white px-4 py-2 rounded-lg hover:bg-indigo-700 transition-colors flex items-center"
+                        className="bg-indigo-600 text-white px-4 py-2 rounded-lg hover:bg-indigo-700 transition-colors flex items-center justify-center"
                     >
                         <span className="mr-2">➕</span>
                         Add Distributor
@@ -128,7 +128,8 @@ export default function DistributorsPage() {
 
             {/* Distributors Table */}
             <div className="bg-white rounded-lg shadow overflow-hidden">
-                <div className="overflow-x-auto">
+                {/* Desktop Table */}
+                <div className="hidden md:block overflow-x-auto">
                     <table className="min-w-full divide-y divide-gray-200">
                         <thead className="bg-gray-50">
                             <tr>
@@ -207,6 +208,58 @@ export default function DistributorsPage() {
                             ))}
                         </tbody>
                     </table>
+                </div>
+
+                {/* Mobile Cards */}
+                <div className="md:hidden divide-y divide-gray-200">
+                    {filteredDistributors.map((distributor) => (
+                        <div key={distributor._id} className="p-4 hover:bg-gray-50 transition-colors">
+                            <div className="mb-3">
+                                <div className="text-base font-medium text-gray-900 mb-1">
+                                    {distributor.name}
+                                </div>
+                                {distributor.description && (
+                                    <div className="text-sm text-gray-600 mb-2">
+                                        {distributor.description}
+                                    </div>
+                                )}
+                            </div>
+
+                            <div className="space-y-2 mb-3">
+                                {distributor.contactPerson && (
+                                    <div className="text-sm text-gray-900">
+                                        <span className="font-medium">Contact:</span> {distributor.contactPerson}
+                                    </div>
+                                )}
+                                {distributor.email && (
+                                    <div className="text-sm text-gray-900">📧 {distributor.email}</div>
+                                )}
+                                {distributor.phone && (
+                                    <div className="text-sm text-gray-900">📞 {distributor.phone}</div>
+                                )}
+                                {distributor.address && (
+                                    <div className="text-sm text-gray-900">📍 {distributor.address}</div>
+                                )}
+                            </div>
+
+                            {canEdit && (
+                                <div className="flex gap-2 pt-3 border-t border-gray-200">
+                                    <button
+                                        onClick={() => handleEdit(distributor)}
+                                        className="flex-1 px-3 py-2 text-sm text-indigo-600 border border-indigo-300 rounded-lg hover:bg-indigo-50"
+                                    >
+                                        Edit
+                                    </button>
+                                    <button
+                                        onClick={() => handleDelete(distributor._id)}
+                                        className="flex-1 px-3 py-2 text-sm text-red-600 border border-red-300 rounded-lg hover:bg-red-50"
+                                    >
+                                        Delete
+                                    </button>
+                                </div>
+                            )}
+                        </div>
+                    ))}
                 </div>
 
                 {filteredDistributors.length === 0 && (

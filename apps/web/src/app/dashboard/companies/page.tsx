@@ -81,10 +81,10 @@ export default function CompaniesPage() {
     return (
         <div className="space-y-6">
             {/* Header */}
-            <div className="flex justify-between items-center">
+            <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4">
                 <div>
                     <h1 className="text-2xl font-bold text-gray-900">Companies</h1>
-                    <p className="text-gray-600">Manage manufacturers and companies</p>
+                    <p className="text-gray-600 text-sm sm:text-base">Manage manufacturers and companies</p>
                 </div>
                 {canEdit && (
                     <button
@@ -92,7 +92,7 @@ export default function CompaniesPage() {
                             setEditingCompany(null);
                             setShowModal(true);
                         }}
-                        className="bg-indigo-600 text-white px-4 py-2 rounded-lg hover:bg-indigo-700 transition-colors flex items-center"
+                        className="bg-indigo-600 text-white px-4 py-2 rounded-lg hover:bg-indigo-700 transition-colors flex items-center justify-center"
                     >
                         <span className="mr-2">➕</span>
                         Add Company
@@ -126,7 +126,8 @@ export default function CompaniesPage() {
 
             {/* Companies Table */}
             <div className="bg-white rounded-lg shadow overflow-hidden">
-                <div className="overflow-x-auto">
+                {/* Desktop Table */}
+                <div className="hidden md:block overflow-x-auto">
                     <table className="min-w-full divide-y divide-gray-200">
                         <thead className="bg-gray-50">
                             <tr>
@@ -210,6 +211,65 @@ export default function CompaniesPage() {
                             ))}
                         </tbody>
                     </table>
+                </div>
+
+                {/* Mobile Cards */}
+                <div className="md:hidden divide-y divide-gray-200">
+                    {filteredCompanies.map((company) => (
+                        <div key={company._id} className="p-4 hover:bg-gray-50 transition-colors">
+                            <div className="mb-3">
+                                <div className="text-base font-medium text-gray-900 mb-1">
+                                    {company.name}
+                                </div>
+                                {company.description && (
+                                    <div className="text-sm text-gray-600 mb-2">
+                                        {company.description}
+                                    </div>
+                                )}
+                            </div>
+
+                            <div className="space-y-2 mb-3">
+                                {company.email && (
+                                    <div className="text-sm text-gray-900">📧 {company.email}</div>
+                                )}
+                                {company.phone && (
+                                    <div className="text-sm text-gray-900">📞 {company.phone}</div>
+                                )}
+                                {company.website && (
+                                    <div>
+                                        <a
+                                            href={company.website}
+                                            target="_blank"
+                                            rel="noopener noreferrer"
+                                            className="text-sm text-indigo-600 hover:text-indigo-900"
+                                        >
+                                            🌐 Visit Website
+                                        </a>
+                                    </div>
+                                )}
+                                <div className="text-xs text-gray-500">
+                                    Created: {company.createdAt ? new Date(company.createdAt).toLocaleDateString() : 'N/A'}
+                                </div>
+                            </div>
+
+                            {canEdit && (
+                                <div className="flex gap-2 pt-3 border-t border-gray-200">
+                                    <button
+                                        onClick={() => handleEdit(company)}
+                                        className="flex-1 px-3 py-2 text-sm text-indigo-600 border border-indigo-300 rounded-lg hover:bg-indigo-50"
+                                    >
+                                        Edit
+                                    </button>
+                                    <button
+                                        onClick={() => handleDelete(company._id)}
+                                        className="flex-1 px-3 py-2 text-sm text-red-600 border border-red-300 rounded-lg hover:bg-red-50"
+                                    >
+                                        Delete
+                                    </button>
+                                </div>
+                            )}
+                        </div>
+                    ))}
                 </div>
 
                 {filteredCompanies.length === 0 && (
