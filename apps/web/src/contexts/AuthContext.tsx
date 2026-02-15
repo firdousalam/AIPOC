@@ -8,6 +8,7 @@ interface User {
     id: string;
     email: string;
     name: string;
+    userType: 'super' | 'admin' | 'user';
 }
 
 interface AuthContextType {
@@ -16,6 +17,7 @@ interface AuthContextType {
     login: (email: string, password: string) => Promise<void>;
     logout: () => void;
     isAuthenticated: boolean;
+    isSuperAdmin: boolean;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -80,6 +82,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
                 login,
                 logout,
                 isAuthenticated: !!user,
+                isSuperAdmin: user?.userType === 'super',
             }}
         >
             {children}

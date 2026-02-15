@@ -15,7 +15,7 @@ import { InsightsModule } from './modules/insights/insights.module';
       isGlobal: true,
     }),
     MongooseModule.forRoot(
-      process.env.MONGODB_URI || 'mongodb://localhost:27017/enterprise-sales-ai',
+      process.env.MONGODB_URI || 'mongodb+srv://TechnophileFirdous:Zuni2058Feb@cluster0.hwth0kg.mongodb.net/?appName=Cluster0',
     ),
     AuthModule,
     UsersModule,
@@ -26,5 +26,5 @@ import { InsightsModule } from './modules/insights/insights.module';
     InsightsModule,
   ],
 })
-export class AppModule {}
+export class AppModule { }
 

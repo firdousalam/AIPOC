@@ -5,19 +5,25 @@ import { usePathname } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
 
 const navigation = [
-    { name: 'Dashboard', href: '/dashboard', icon: '📊' },
-    { name: 'Products', href: '/dashboard/products', icon: '📦' },
-    { name: 'Sales', href: '/dashboard/sales', icon: '💰' },
-    { name: 'Inventory', href: '/dashboard/inventory', icon: '📋' },
-    { name: 'Forecast', href: '/dashboard/forecast', icon: '📈' },
-    { name: 'AI Insights', href: '/dashboard/insights', icon: '🤖' },
-    { name: 'Reports', href: '/dashboard/reports', icon: '📄' },
-    { name: 'Settings', href: '/dashboard/settings', icon: '⚙️' },
+    { name: 'Dashboard', href: '/dashboard', icon: '📊', requiresSuper: false },
+    { name: 'Products', href: '/dashboard/products', icon: '📦', requiresSuper: false },
+    { name: 'Sales', href: '/dashboard/sales', icon: '💰', requiresSuper: false },
+    { name: 'Inventory', href: '/dashboard/inventory', icon: '📋', requiresSuper: false },
+    { name: 'Forecast', href: '/dashboard/forecast', icon: '📈', requiresSuper: false },
+    { name: 'AI Insights', href: '/dashboard/insights', icon: '🤖', requiresSuper: false },
+    { name: 'Reports', href: '/dashboard/reports', icon: '📄', requiresSuper: false },
+    { name: 'Users', href: '/dashboard/users', icon: '👥', requiresSuper: true },
+    { name: 'Settings', href: '/dashboard/settings', icon: '⚙️', requiresSuper: false },
 ];
 
 export default function Sidebar() {
     const pathname = usePathname();
-    const { user, logout } = useAuth();
+    const { user, logout, isSuperAdmin } = useAuth();
+
+    // Filter navigation based on user type
+    const filteredNavigation = navigation.filter(item =>
+        !item.requiresSuper || isSuperAdmin
+    );
 
     return (
         <div className="flex flex-col w-64 bg-gray-900 min-h-screen">
@@ -36,12 +42,18 @@ export default function Sidebar() {
                 <div className="ml-3">
                     <p className="text-sm font-medium text-white">{user?.name || 'Admin'}</p>
                     <p className="text-xs text-gray-400">{user?.email || 'admin@example.com'}</p>
+                    {user?.userType && (
+                        <span className={`text-xs px-2 py-0.5 rounded-full ${user.userType === 'super' ? 'bg-yellow-500 text-yellow-900' : 'bg-blue-500 text-blue-900'
+                            }`}>
+                            {user.userType}
+                        </span>
+                    )}
                 </div>
             </div>
 
             {/* Navigation */}
             <nav className="flex-1 px-2 py-4 space-y-1">
-                {navigation.map((item) => {
+                {filteredNavigation.map((item) => {
                     const isActive = pathname === item.href || pathname?.startsWith(item.href + '/');
                     return (
                         <Link
