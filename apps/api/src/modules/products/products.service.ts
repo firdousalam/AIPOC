@@ -33,7 +33,13 @@ export class ProductsService {
     return createdProduct.save();
   }
 
-  async findAll(search?: string, startDate?: string, endDate?: string): Promise<Product[]> {
+  async findAll(
+    search?: string,
+    startDate?: string,
+    endDate?: string,
+    page: number = 1,
+    limit: number = 20,
+  ): Promise<{ products: Product[]; total: number; page: number; totalPages: number }> {
     const query: any = { status: 'active' };
 
     // Add search filter if provided
@@ -64,7 +70,27 @@ export class ProductsService {
       }
     }
 
-    return this.productModel.find(query).sort({ createdAt: -1 }).exec();
+    // Get total count for pagination
+    const total = await this.productModel.countDocuments(query).exec();
+
+    // Calculate pagination
+    const skip = (page - 1) * limit;
+    const totalPages = Math.ceil(total / limit);
+
+    // Fetch paginated products
+    const products = await this.productModel
+      .find(query)
+      .sort({ createdAt: -1 })
+      .skip(skip)
+      .limit(limit)
+      .exec();
+
+    return {
+      products,
+      total,
+      page,
+      totalPages,
+    };
   }
 
   async findOne(id: string): Promise<Product> {

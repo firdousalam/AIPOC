@@ -25,7 +25,6 @@ interface Product {
 export default function ProductsPage() {
     const { user, isSuperAdmin } = useAuth();
     const [products, setProducts] = useState<Product[]>([]);
-    const [filteredProducts, setFilteredProducts] = useState<Product[]>([]);
     const [loading, setLoading] = useState(true);
     const [showAddModal, setShowAddModal] = useState(false);
     const [showEditModal, setShowEditModal] = useState(false);
@@ -33,10 +32,12 @@ export default function ProductsPage() {
     const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
     const [error, setError] = useState('');
 
-    // Search and pagination
+    // Pagination state
     const [searchTerm, setSearchTerm] = useState('');
     const [currentPage, setCurrentPage] = useState(1);
     const [itemsPerPage, setItemsPerPage] = useState(20);
+    const [totalItems, setTotalItems] = useState(0);
+    const [totalPages, setTotalPages] = useState(0);
     const [startDate, setStartDate] = useState('');
     const [endDate, setEndDate] = useState('');
     const [searchLoading, setSearchLoading] = useState(false);
@@ -48,7 +49,7 @@ export default function ProductsPage() {
 
     useEffect(() => {
         fetchProducts();
-    }, []);
+    }, [currentPage, itemsPerPage]);
 
     // Debounced search effect
     useEffect(() => {
@@ -57,10 +58,15 @@ export default function ProductsPage() {
             clearTimeout(searchTimeoutRef.current);
         }
 
-        // Set new timeout for debounced search
-        searchTimeoutRef.current = setTimeout(() => {
-            fetchProducts();
-        }, 500);
+        // Reset to page 1 when search changes
+        if (currentPage !== 1) {
+            setCurrentPage(1);
+        } else {
+            // Set new timeout for debounced search
+            searchTimeoutRef.current = setTimeout(() => {
+                fetchProducts();
+            }, 500);
+        }
 
         // Cleanup function
         return () => {
@@ -70,12 +76,6 @@ export default function ProductsPage() {
         };
     }, [searchTerm]);
 
-    useEffect(() => {
-        // Filter products based on search term (removed - now handled by API)
-        setFilteredProducts(products);
-        setCurrentPage(1); // Reset to first page when data changes
-    }, [products]);
-
     const fetchProducts = async () => {
         try {
             setSearchLoading(true);
@@ -83,14 +83,27 @@ export default function ProductsPage() {
             setError('');
 
             // Build query parameters
-            const params: any = {};
+            const params: any = {
+                page: currentPage,
+                limit: itemsPerPage,
+            };
             if (searchTerm.trim()) params.search = searchTerm.trim();
             if (startDate) params.startDate = startDate;
             if (endDate) params.endDate = endDate;
 
             const response = await apiClient.get('/api/products', { params });
-            setProducts(response.data);
-            setFilteredProducts(response.data);
+
+            // Handle paginated response
+            if (response.data.products) {
+                setProducts(response.data.products);
+                setTotalItems(response.data.total);
+                setTotalPages(response.data.totalPages);
+            } else {
+                // Fallback for non-paginated response
+                setProducts(response.data);
+                setTotalItems(response.data.length);
+                setTotalPages(1);
+            }
         } catch (err: any) {
             console.error('Error fetching products:', err);
             setError(err.response?.data?.message || 'Failed to fetch products');
@@ -100,34 +113,16 @@ export default function ProductsPage() {
     };
 
     const handleDateSearch = () => {
+        setCurrentPage(1); // Reset to first page
         fetchProducts();
     };
 
     const handleClearDates = () => {
         setStartDate('');
         setEndDate('');
-        // Fetch products without date filters
-        const fetchWithoutDates = async () => {
-            try {
-                setSearchLoading(true);
-                setLoading(false);
-                setError('');
-
-                // Build query parameters without dates
-                const params: any = {};
-                if (searchTerm.trim()) params.search = searchTerm.trim();
-
-                const response = await apiClient.get('/api/products', { params });
-                setProducts(response.data);
-                setFilteredProducts(response.data);
-            } catch (err: any) {
-                console.error('Error fetching products:', err);
-                setError(err.response?.data?.message || 'Failed to fetch products');
-            } finally {
-                setSearchLoading(false);
-            }
-        };
-        fetchWithoutDates();
+        setCurrentPage(1); // Reset to first page
+        // Trigger fetch with useEffect
+        fetchProducts();
     };
 
     const handleDelete = async (productId: string) => {
@@ -135,7 +130,8 @@ export default function ProductsPage() {
 
         try {
             await apiClient.delete(`/api/products/${productId}`);
-            setProducts(products.filter(p => p._id !== productId));
+            // Refresh current page
+            fetchProducts();
             setError('');
         } catch (err: any) {
             console.error('Error deleting product:', err);
@@ -154,8 +150,8 @@ export default function ProductsPage() {
     };
 
     const handleExportToExcel = () => {
-        // Prepare data for export
-        const exportData = filteredProducts.map(product => ({
+        // Prepare data for export (current page only)
+        const exportData = products.map(product => ({
             'Product ID': product.productId || 'N/A',
             'Name': product.name || 'N/A',
             'Description': product.description || 'No description',
@@ -188,18 +184,12 @@ export default function ProductsPage() {
         const link = document.createElement('a');
         const url = URL.createObjectURL(blob);
         link.setAttribute('href', url);
-        link.setAttribute('download', `products_${new Date().toISOString().split('T')[0]}.csv`);
+        link.setAttribute('download', `products_page${currentPage}_${new Date().toISOString().split('T')[0]}.csv`);
         link.style.visibility = 'hidden';
         document.body.appendChild(link);
         link.click();
         document.body.removeChild(link);
     };
-
-    // Pagination logic
-    const indexOfLastItem = currentPage * itemsPerPage;
-    const indexOfFirstItem = indexOfLastItem - itemsPerPage;
-    const currentItems = filteredProducts.slice(indexOfFirstItem, indexOfLastItem);
-    const totalPages = Math.ceil(filteredProducts.length / itemsPerPage);
 
     const handlePageChange = (pageNumber: number) => {
         setCurrentPage(pageNumber);
@@ -228,7 +218,7 @@ export default function ProductsPage() {
                     <button
                         onClick={handleExportToExcel}
                         className="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 transition-colors flex items-center justify-center"
-                        disabled={filteredProducts.length === 0}
+                        disabled={products.length === 0}
                     >
                         <span className="mr-2">📥</span>
                         Export to Excel
@@ -359,7 +349,7 @@ export default function ProductsPage() {
                             </tr>
                         </thead>
                         <tbody className="bg-white divide-y divide-gray-200">
-                            {currentItems.map((product) => (
+                            {products.map((product) => (
                                 <tr key={product._id} className="hover:bg-gray-50 transition-colors">
                                     <td className="px-6 py-4 whitespace-nowrap">
                                         <div className="text-sm font-semibold text-indigo-600">
@@ -456,7 +446,7 @@ export default function ProductsPage() {
 
                 {/* Mobile Cards */}
                 <div className="md:hidden divide-y divide-gray-200">
-                    {currentItems.map((product) => (
+                    {products.map((product) => (
                         <div key={product._id} className="p-4 hover:bg-gray-50 transition-colors">
                             <div className="flex justify-between items-start mb-2">
                                 <div className="flex-1">
@@ -532,7 +522,7 @@ export default function ProductsPage() {
                     ))}
                 </div>
 
-                {currentItems.length === 0 && (
+                {products.length === 0 && (
                     <div className="text-center py-12">
                         <p className="text-gray-500">
                             {searchTerm ? 'No products found matching your search.' : 'No products found. Add your first product!'}
@@ -542,7 +532,7 @@ export default function ProductsPage() {
             </div>
 
             {/* Pagination */}
-            {filteredProducts.length > 0 && (
+            {totalItems > 0 && (
                 <div className="bg-white rounded-lg shadow px-4 py-3">
                     <div className="flex flex-col sm:flex-row gap-4 items-center justify-between">
                         {/* Left side - Items per page */}
@@ -567,7 +557,7 @@ export default function ProductsPage() {
                         <div className="flex items-center gap-6">
                             {/* Results count */}
                             <div className="text-sm text-gray-600">
-                                Showing {filteredProducts.length > 0 ? indexOfFirstItem + 1 : 0} to {Math.min(indexOfLastItem, filteredProducts.length)} of {filteredProducts.length} products
+                                Showing {((currentPage - 1) * itemsPerPage) + 1} to {Math.min(currentPage * itemsPerPage, totalItems)} of {totalItems} products
                             </div>
 
                             {/* Page navigation */}

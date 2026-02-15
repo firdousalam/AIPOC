@@ -16,7 +16,7 @@ import { SettingsModule } from './modules/settings/settings.module';
       isGlobal: true,
     }),
     MongooseModule.forRoot(
-      process.env.MONGODB_URI || 'mongodb://localhost:27017/enterprise-sales-ai',
+      process.env.MONGODB_URI || 'mongodb+srv://TechnophileFirdous:Zuni2058Feb@cluster0.hwth0kg.mongodb.net/?appName=Cluster0',
     ),
     AuthModule,
     UsersModule,

@@ -56,8 +56,12 @@ export class ProductsController {
     @Query('search') search?: string,
     @Query('startDate') startDate?: string,
     @Query('endDate') endDate?: string,
+    @Query('page') page?: string,
+    @Query('limit') limit?: string,
   ) {
-    return this.productsService.findAll(search, startDate, endDate);
+    const pageNum = page ? parseInt(page, 10) : 1;
+    const limitNum = limit ? parseInt(limit, 10) : 20;
+    return this.productsService.findAll(search, startDate, endDate, pageNum, limitNum);
   }
 
   @Get(':id')
