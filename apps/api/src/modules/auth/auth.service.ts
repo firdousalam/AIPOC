@@ -13,18 +13,17 @@ export class AuthService {
   ) { }
 
   async register(registerDto: RegisterDto) {
-    const hashedPassword = await bcrypt.hash(registerDto.password, 10);
-    const user = (await this.usersService.create({
-      ...registerDto,
-      password: hashedPassword,
-    })) as UserDocument;
+    // Don't hash here - let users.service handle it
+    const user = (await this.usersService.create(registerDto)) as UserDocument;
     return { message: 'User created successfully', userId: String(user._id) };
   }
 
   async validateUser(email: string, password: string): Promise<any> {
     const user = await this.usersService.findByEmail(email);
     if (user && (await bcrypt.compare(password, user.password))) {
-      const { password: _, ...result } = user;
+      // Convert Mongoose document to plain object
+      const userObject = (user as any).toObject ? (user as any).toObject() : { ...user };
+      const { password: _, ...result } = userObject;
       return result;
     }
     return null;
