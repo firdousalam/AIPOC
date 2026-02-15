@@ -68,6 +68,7 @@ function getPageTitle(pathname: string | null): string {
         '/dashboard/forecast': 'Sales Forecasting',
         '/dashboard/insights': 'AI Insights',
         '/dashboard/reports': 'Reports',
+        '/dashboard/users': 'User Management',
         '/dashboard/settings': 'Settings',
     };
 
