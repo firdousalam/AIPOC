@@ -20,10 +20,19 @@ apiClient.interceptors.request.use((config) => {
 apiClient.interceptors.response.use(
   (response) => response,
   (error) => {
-    if (error.response?.status === 401) {
-      // Handle unauthorized
+    // Only handle 401 if we're not on the login page and not during login
+    const isLoginRequest = error.config?.url?.includes('/auth/login');
+    const isLoginPage = typeof window !== 'undefined' && window.location.pathname === '/login';
+
+    if (error.response?.status === 401 && !isLoginRequest && !isLoginPage) {
+      // Handle unauthorized - clear token and redirect
       localStorage.removeItem('token');
-      window.location.href = '/login';
+      localStorage.removeItem('user');
+
+      // Use Next.js navigation if available, otherwise fallback to window.location
+      if (typeof window !== 'undefined') {
+        window.location.href = '/login';
+      }
     }
     return Promise.reject(error);
   }
