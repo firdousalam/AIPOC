@@ -454,6 +454,35 @@ function ProductModal({
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState('');
 
+    // Settings data
+    const [categories, setCategories] = useState<Array<{ _id: string; name: string }>>([]);
+    const [companies, setCompanies] = useState<Array<{ _id: string; name: string }>>([]);
+    const [distributors, setDistributors] = useState<Array<{ _id: string; name: string }>>([]);
+    const [loadingSettings, setLoadingSettings] = useState(true);
+
+    useEffect(() => {
+        fetchSettings();
+    }, []);
+
+    const fetchSettings = async () => {
+        try {
+            setLoadingSettings(true);
+            const [categoriesRes, companiesRes, distributorsRes] = await Promise.all([
+                apiClient.get('/api/settings/categories'),
+                apiClient.get('/api/settings/companies'),
+                apiClient.get('/api/settings/distributors'),
+            ]);
+            setCategories(categoriesRes.data);
+            setCompanies(companiesRes.data);
+            setDistributors(distributorsRes.data);
+        } catch (err: any) {
+            console.error('Error fetching settings:', err);
+            setError('Failed to load categories, companies, and distributors');
+        } finally {
+            setLoadingSettings(false);
+        }
+    };
+
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
 
@@ -544,13 +573,19 @@ function ProductModal({
                             <label className="block text-sm font-medium text-gray-700 mb-2">
                                 Category
                             </label>
-                            <input
-                                type="text"
+                            <select
                                 value={formData.category}
                                 onChange={(e) => handleChange('category', e.target.value)}
                                 className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                                placeholder="e.g., Electronics"
-                            />
+                                disabled={loadingSettings}
+                            >
+                                <option value="">Select a category</option>
+                                {categories.map((cat) => (
+                                    <option key={cat._id} value={cat.name}>
+                                        {cat.name}
+                                    </option>
+                                ))}
+                            </select>
                         </div>
 
                         {/* Stock */}
@@ -573,13 +608,19 @@ function ProductModal({
                             <label className="block text-sm font-medium text-gray-700 mb-2">
                                 Company/Manufacturer
                             </label>
-                            <input
-                                type="text"
+                            <select
                                 value={formData.company}
                                 onChange={(e) => handleChange('company', e.target.value)}
                                 className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                                placeholder="e.g., Apple Inc"
-                            />
+                                disabled={loadingSettings}
+                            >
+                                <option value="">Select a company</option>
+                                {companies.map((comp) => (
+                                    <option key={comp._id} value={comp.name}>
+                                        {comp.name}
+                                    </option>
+                                ))}
+                            </select>
                         </div>
 
                         {/* Distributor */}
@@ -587,13 +628,19 @@ function ProductModal({
                             <label className="block text-sm font-medium text-gray-700 mb-2">
                                 Distributor
                             </label>
-                            <input
-                                type="text"
+                            <select
                                 value={formData.distributor}
                                 onChange={(e) => handleChange('distributor', e.target.value)}
                                 className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                                placeholder="e.g., Tech Distributors"
-                            />
+                                disabled={loadingSettings}
+                            >
+                                <option value="">Select a distributor</option>
+                                {distributors.map((dist) => (
+                                    <option key={dist._id} value={dist.name}>
+                                        {dist.name}
+                                    </option>
+                                ))}
+                            </select>
                         </div>
 
                         {/* MRP */}
