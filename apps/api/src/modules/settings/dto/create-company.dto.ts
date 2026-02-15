@@ -1,0 +1,23 @@
+import { IsString, IsOptional, IsEmail } from 'class-validator';
+import { VALIDATION_MESSAGES } from '../../../utils/constants';
+
+export class CreateCompanyDto {
+    @IsString({ message: VALIDATION_MESSAGES.COMMON.MUST_BE_STRING('Company name') })
+    name: string;
+
+    @IsOptional()
+    @IsString({ message: VALIDATION_MESSAGES.COMMON.MUST_BE_STRING('Description') })
+    description?: string;
+
+    @IsOptional()
+    @IsString({ message: VALIDATION_MESSAGES.COMMON.MUST_BE_STRING('Website') })
+    website?: string;
+
+    @IsOptional()
+    @IsEmail({}, { message: VALIDATION_MESSAGES.COMMON.MUST_BE_EMAIL('Email') })
+    email?: string;
+
+    @IsOptional()
+    @IsString({ message: VALIDATION_MESSAGES.COMMON.MUST_BE_STRING('Phone') })
+    phone?: string;
+}
