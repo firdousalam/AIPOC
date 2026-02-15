@@ -17,7 +17,7 @@ export class ProductsService {
   }
 
   async findAll(): Promise<Product[]> {
-    return this.productModel.find().exec();
+    return this.productModel.find({ status: 'active' }).exec();
   }
 
   async findOne(id: string): Promise<Product> {
@@ -41,10 +41,23 @@ export class ProductsService {
   }
 
   async remove(id: string): Promise<void> {
-    const result = await this.productModel.findByIdAndDelete(id).exec();
+    const result = await this.productModel.findByIdAndUpdate(
+      id,
+      { status: 'inactive' },
+      { new: true }
+    ).exec();
     if (!result) {
       throw new NotFoundException(ERROR_MESSAGES.PRODUCT.NOT_FOUND(id));
     }
+  }
+
+  async toggleStatus(id: string): Promise<Product> {
+    const product = await this.productModel.findById(id).exec();
+    if (!product) {
+      throw new NotFoundException(ERROR_MESSAGES.PRODUCT.NOT_FOUND(id));
+    }
+    product.status = product.status === 'active' ? 'inactive' : 'active';
+    return await product.save();
   }
 }
 

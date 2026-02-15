@@ -16,6 +16,7 @@ interface Product {
     mrp?: number;
     salePrice?: number;
     discount?: number;
+    status?: string;
     createdAt?: string;
     updatedAt?: string;
 }

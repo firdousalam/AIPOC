@@ -34,6 +34,9 @@ export class Product {
 
   @Prop()
   discount?: number;
+
+  @Prop({ default: 'active', enum: ['active', 'inactive'] })
+  status: string;
 }
 
 export const ProductSchema = SchemaFactory.createForClass(Product);

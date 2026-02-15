@@ -88,5 +88,15 @@ export class ProductsController {
     await this.productsService.remove(id);
     return { message: SUCCESS_MESSAGES.PRODUCT.DELETED };
   }
+
+  @Put(':id/toggle-status')
+  @ApiOperation({ summary: 'Toggle product status (active/inactive)' })
+  @ApiParam({ name: 'id', description: 'Product ID' })
+  @ApiResponse({ status: HTTP_STATUS.OK, description: 'Product status toggled successfully' })
+  @ApiResponse({ status: HTTP_STATUS.NOT_FOUND, description: 'Product not found' })
+  @ApiResponse({ status: HTTP_STATUS.UNAUTHORIZED, description: API_DOCS.COMMON.UNAUTHORIZED })
+  toggleStatus(@Param('id') id: string) {
+    return this.productsService.toggleStatus(id);
+  }
 }
 

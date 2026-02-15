@@ -8,6 +8,7 @@ import { SalesModule } from './modules/sales/sales.module';
 import { InventoryModule } from './modules/inventory/inventory.module';
 import { ForecastModule } from './modules/forecast/forecast.module';
 import { InsightsModule } from './modules/insights/insights.module';
+import { SettingsModule } from './modules/settings/settings.module';
 
 @Module({
   imports: [
@@ -24,6 +25,7 @@ import { InsightsModule } from './modules/insights/insights.module';
     InventoryModule,
     ForecastModule,
     InsightsModule,
+    SettingsModule,
   ],
 })
 export class AppModule { }
