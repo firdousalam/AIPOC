@@ -1,155 +1,185 @@
-# Sample Data Generation Script
+# Data Generation Scripts
 
-This script generates realistic sample data for the past 4 months to enable forecasting and insights features.
+This directory contains scripts for generating sample data for the Sales AI application.
 
-## What Data is Generated
+## Available Scripts
 
-### 1. Categories (8 items)
-- Electronics
-- Clothing
-- Food & Beverages
-- Home & Garden
-- Sports & Outdoors
-- Books & Media
-- Health & Beauty
-- Toys & Games
-
-### 2. Companies (5 items)
-- TechCorp (Electronics)
-- FashionHub (Clothing)
-- FreshFoods Inc (Food)
-- HomeStyle (Home & Garden)
-- SportsPro (Sports)
-
-### 3. Distributors (3 items)
-- Global Logistics
-- FastShip Co
-- Regional Supply
-
-### 4. Products (15 items)
-Various products across different categories with:
-- Auto-generated Product IDs (PROD-0001, PROD-0002, etc.)
-- Realistic pricing (MRP, Sale Price, Discount)
-- Stock levels (50-500 units)
-- Creation dates spread over 4 months
-
-### 5. Sales (~1,800-2,400 records)
-- 10-20 sales per weekday
-- 20-30 sales per weekend day
-- Over 120 days (4 months)
-- Random customers, payment methods
-- Quantities: 1-5 units per sale
-- All sales marked as "completed"
-
-### 6. Inventory (15 records)
-- One record per product
-- Current stock levels
-- Min/Max stock levels
-- Last restocked dates
-- Warehouse/Store locations
-
-## How to Run
-
-### Prerequisites
-Make sure your MongoDB is running and the connection string is set in `.env`:
-
-```env
-MONGODB_URI=mongodb://localhost:27017/sales-ai
-```
-
-### Run the Script
-
-From the project root directory:
-
-```bash
-# Install dependencies first (if not already installed)
-pnpm install
-
-# Run the data generation script
-pnpm generate-data
-```
-
-Or using npm:
-
+### 1. Generate Sample Data (Old Schema)
 ```bash
 npm run generate-data
+# or
+pnpm run generate-data
 ```
 
-### What Happens
+Generates initial sample data with the old single-product sales schema:
+- 8 categories
+- 5 companies
+- 3 distributors
+- 15 products
+- ~2,157 sales (4 months of data)
+- 15 inventory records
 
-1. **Connects to MongoDB** using the URI from `.env`
-2. **Clears existing data** from all collections (Categories, Companies, Distributors, Products, Sales, Inventory)
-3. **Generates new data** with dates spanning the past 4 months
-4. **Displays summary** of generated records
-5. **Disconnects** from MongoDB
+**Date Range**: Past 4 months from current date
 
-## Data Characteristics
+### 2. Generate New Sales (Multi-Product Schema)
+```bash
+npm run generate-sales
+# or
+pnpm run generate-sales
+```
 
-### Sales Patterns
-- **Weekday sales**: 10-20 transactions per day
-- **Weekend sales**: 20-30 transactions per day (higher volume)
-- **Date range**: Past 4 months from current date
-- **Total sales**: ~1,800-2,400 transactions
+Generates 1000 sales with the new multi-product schema:
+- Multiple products per sale (1-5 products)
+- Comprehensive customer information
+- Payment methods
+- Notes
 
-### Product Distribution
-- Electronics: 3 products
-- Clothing: 2 products
-- Food & Beverages: 2 products
-- Sports & Outdoors: 2 products
-- Home & Garden: 2 products
-- Health & Beauty: 2 products
-- Toys & Games: 2 products
+**Date Range**: July 1, 2025 to February 16, 2026 (today)
 
-### Pricing Strategy
-- All products have MRP (Maximum Retail Price)
-- Sale prices are lower than MRP
-- Discounts range from 20% to 33%
+## Prerequisites
 
-## Use Cases
+1. MongoDB must be running
+2. Environment variables must be configured in `.env` file:
+   ```
+   MONGODB_URI=mongodb://localhost:27017/sales-ai
+   ```
+3. Products must exist in the database (run `generate-data` first if starting fresh)
 
-This generated data enables:
+## Script Details
 
-1. **Sales Forecasting**
-   - 4 months of historical sales data
-   - Seasonal patterns (weekday vs weekend)
-   - Product-wise sales trends
+### generate-sample-data.ts
+- Uses old sales schema (single product per sale)
+- Creates base data: categories, companies, distributors, products
+- Generates sales with realistic patterns (more on weekends)
+- Creates inventory records
 
-2. **Inventory Management**
-   - Current stock levels
-   - Min/Max thresholds
-   - Restock patterns
+### generate-new-sales.ts
+- Uses new sales schema (multiple products per sale)
+- Requires existing products in database
+- Generates realistic customer data:
+  - 81.6% of sales have customer information
+  - 70% have email addresses
+  - 80% have mobile numbers
+  - 50% have PAN/Voter ID
+- 90% of sales have payment method specified
+- 30% of sales have notes
+- Average 2.98 items per sale
 
-3. **AI Insights**
-   - Customer behavior analysis
-   - Product performance metrics
-   - Revenue trends
-   - Popular products identification
+## Generated Data Statistics
 
-4. **Dashboard Analytics**
-   - Sales charts and graphs
-   - Revenue reports
-   - Inventory status
-   - Product performance
+### New Sales Script Output
+```
+Total Sales: 1000
+Date Range: 7/1/2025 to 2/16/2026
+Total Revenue: ~$964,827.83
+Average Sale Amount: ~$964.83
+Total Items Sold: ~2,981
+Average Items per Sale: 2.98
+Sales with Customer Info: 816 (81.6%)
+Sales with Payment Method: 900 (90.0%)
+```
 
-## Warning
+## Customer Data Format
 
-⚠️ **This script will DELETE all existing data** in the following collections:
+### Names
+Indian names are used for realistic data:
+- Rajesh Kumar, Priya Sharma, Amit Patel, etc.
+
+### Phone Numbers
+International format with various country codes:
+- +91 (India)
+- +1 (USA)
+- +44 (UK)
+- +61 (Australia)
+- +65 (Singapore)
+
+### Email Addresses
+Generated from customer names with common domains:
+- gmail.com
+- yahoo.com
+- outlook.com
+- hotmail.com
+- company.com
+
+### PAN/Voter ID
+- **PAN Format**: ABCDE1234F (5 letters + 4 digits + 1 letter)
+- **Voter ID Format**: ABC1234567 (3 letters + 7 digits)
+
+## Payment Methods
+- Cash
+- Credit Card
+- Debit Card
+- UPI
+- Net Banking
+- Cheque
+
+## Notes Examples
+- Regular customer
+- Bulk order discount applied
+- Express delivery requested
+- Gift wrapping included
+- Corporate order
+- Repeat purchase
+- Seasonal sale
+- Loyalty program member
+- First time customer
+- Referral discount applied
+
+## Running the Scripts
+
+### First Time Setup
+```bash
+# 1. Generate base data (categories, companies, products, etc.)
+npm run generate-data
+
+# 2. Generate new sales with multi-product schema
+npm run generate-sales
+```
+
+### Regenerate Sales Only
+```bash
+# This will clear existing sales and generate new ones
+npm run generate-sales
+```
+
+## Troubleshooting
+
+### "No products found" Error
+Run `npm run generate-data` first to create products.
+
+### MongoDB Connection Error
+1. Ensure MongoDB is running
+2. Check MONGODB_URI in `.env` file
+3. Verify MongoDB is accessible at the specified URI
+
+### Permission Errors
+Run the command prompt or terminal as administrator (Windows) or use sudo (Linux/Mac).
+
+## Technical Details
+
+### Dependencies
+- mongoose: MongoDB ODM
+- dotenv: Environment variable management
+- tsx: TypeScript execution (used instead of ts-node)
+
+### Database Collections
 - categories
 - companies
 - distributors
 - products
-- sales
+- sales (updated schema)
 - inventories
 
-Make sure to backup any important data before running this script!
+### Date Generation
+Sales are distributed evenly across the date range with random times throughout each day.
 
-## Customization
+## Future Enhancements
 
-You can modify the script to:
-- Change the number of months (currently 4)
-- Adjust sales volume per day
-- Add more products, categories, or companies
-- Modify pricing strategies
-- Change stock levels
-
-Edit `scripts/generate-sample-data.ts` to customize the data generation.
+Potential improvements:
+- Seasonal sales patterns (holidays, festivals)
+- Product popularity trends
+- Customer loyalty patterns
+- Regional variations
+- Bulk order discounts
+- Return/refund records
+- Inventory deduction on sales

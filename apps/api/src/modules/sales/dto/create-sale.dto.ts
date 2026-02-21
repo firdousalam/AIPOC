@@ -1,7 +1,8 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { IsString, IsNumber, IsDate, IsOptional, Min } from 'class-validator';
+import { IsString, IsNumber, IsDate, IsOptional, Min, IsArray, ValidateNested, IsEmail } from 'class-validator';
+import { Type } from 'class-transformer';
 
-export class CreateSaleDto {
+export class SaleItemDto {
   @ApiProperty()
   @IsString()
   productId: string;
@@ -18,7 +19,42 @@ export class CreateSaleDto {
   @ApiProperty({ minimum: 0 })
   @IsNumber()
   @Min(0)
-  price: number;
+  unitPrice: number;
+
+  @ApiProperty({ minimum: 0 })
+  @IsNumber()
+  @Min(0)
+  totalPrice: number;
+}
+
+export class CustomerInfoDto {
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsString()
+  name?: string;
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsEmail()
+  email?: string;
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsString()
+  mobile?: string;
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsString()
+  panOrVoterId?: string;
+}
+
+export class CreateSaleDto {
+  @ApiProperty({ type: [SaleItemDto] })
+  @IsArray()
+  @ValidateNested({ each: true })
+  @Type(() => SaleItemDto)
+  items: SaleItemDto[];
 
   @ApiProperty({ minimum: 0 })
   @IsNumber()
@@ -27,12 +63,19 @@ export class CreateSaleDto {
 
   @ApiProperty({ example: '2024-01-15T00:00:00.000Z' })
   @IsDate()
+  @Type(() => Date)
   saleDate: Date;
+
+  @ApiPropertyOptional({ type: CustomerInfoDto })
+  @IsOptional()
+  @ValidateNested()
+  @Type(() => CustomerInfoDto)
+  customer?: CustomerInfoDto;
 
   @ApiPropertyOptional()
   @IsOptional()
   @IsString()
-  customerId?: string;
+  paymentMethod?: string;
 
   @ApiPropertyOptional()
   @IsOptional()

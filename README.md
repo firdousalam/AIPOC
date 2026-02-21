@@ -1,6 +1,29 @@
-# Enterprise Sales AI Application
+# Inventory & Sales Management System
 
-A production-ready enterprise application for sales forecasting and inventory management with AI-powered predictions.
+A comprehensive, production-ready enterprise application for retail businesses, distributors, and wholesalers. Track products, manage inventory, record sales, and gain AI-powered business insights.
+
+## 📚 Documentation
+
+- **[User Guide](docs/USER_GUIDE.md)** - Complete guide on how to use the application
+- **[Quick Start](docs/QUICK_START.md)** - Get started in 5 minutes
+- **[Feature Roadmap](docs/FEATURE_ROADMAP.md)** - Future enhancements and industry features
+- **[Architecture Overview](docs/ARCHITECTURE_OVERVIEW.md)** - Technical architecture and design
+- **[Deployment Guide](docs/DEPLOYMENT-FREE.md)** - Deploy for free using Vercel, Render, MongoDB Atlas
+
+## ✨ Key Features
+
+- ✅ Product catalog management with cost price, sale price, and MRP
+- ✅ Multi-product sales with customer information
+- ✅ Real-time inventory tracking with stock validation
+- ✅ Automatic stock deduction on sales
+- ✅ Low stock alerts and out-of-stock prevention
+- ✅ Server-side pagination for performance
+- ✅ Responsive design (desktop + mobile)
+- ✅ Search, filtering, and Excel export
+- ✅ Dashboard with key business metrics
+- ✅ Master data management (categories, companies, distributors)
+- ✅ JWT authentication and role-based access
+- 🔄 AI-powered demand forecasting (ML service ready)
 
 ## Tech Stack
 
@@ -165,6 +188,67 @@ You can run this app at **$0/month** using free tiers:
 - Optional `render.yaml` blueprint
 
 Quick links: [Vercel](https://vercel.com) · [Render](https://render.com) · [Railway](https://railway.app) · [MongoDB Atlas](https://www.mongodb.com/cloud/atlas)
+
+## 📖 What Each Module Does
+
+### Products
+Master catalog of all items you sell. Tracks name, SKU, barcode, cost price (from supplier), sale price (to customer), MRP, category, company, distributor, and expiry dates.
+
+### Sales
+Record every transaction with customers. Supports multiple products per sale, customer information (name, email, mobile, PAN/Voter ID), payment methods, and automatic stock deduction.
+
+### Inventory
+Track stock levels in real-time. Prevents overselling, alerts on low stock, tracks warehouse locations, and automatically updates when sales are made.
+
+### Settings
+Configure master data: categories (product types), companies (manufacturers/brands), and distributors (suppliers).
+
+## 🚀 Quick Usage Guide
+
+1. **Setup Master Data**: Add categories, companies, and distributors in Settings
+2. **Add Products**: Create your product catalog with pricing and details
+3. **Initialize Inventory**: Set initial stock quantities for each product
+4. **Make Sales**: Record transactions - system auto-validates stock and deducts inventory
+5. **Monitor Dashboard**: Track revenue, sales, low stock alerts, and trends
+
+See [Quick Start Guide](docs/QUICK_START.md) for detailed step-by-step instructions.
+
+## 🎯 Industry Applications
+
+- **Retail Stores**: Fast checkout, inventory tracking, barcode scanning
+- **Wholesale Business**: Bulk orders, credit management, supplier tracking
+- **Pharmacy**: Expiry tracking, batch management, prescription handling
+- **Restaurants**: Menu management, table orders, recipe costing
+- **E-commerce**: Online orders, shipping integration, marketplace sync
+
+## 🔮 Future Enhancements
+
+See [Feature Roadmap](docs/FEATURE_ROADMAP.md) for detailed plans:
+
+- GST/Tax management and invoice generation
+- Barcode scanning for faster checkout
+- Purchase order management
+- Multi-location/multi-store support
+- Mobile app (React Native)
+- AI demand forecasting and price optimization
+- Customer insights and recommendations
+- Automated reordering
+- CRM and accounting integration
+
+## 📊 Sample Data
+
+Generate sample data for testing:
+
+```bash
+# Generate products, categories, companies, distributors
+npm run generate-data
+
+# Generate inventory entries
+npm run generate-inventory
+
+# Generate sales transactions
+npm run generate-sales
+```
 
 ## License
 

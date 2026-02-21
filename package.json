@@ -14,13 +14,16 @@
     "lint": "pnpm --filter web lint && pnpm --filter api lint",
     "test": "pnpm --filter web test && pnpm --filter api test",
     "clean": "pnpm -r exec rm -rf node_modules dist .next",
-    "generate-data": "ts-node scripts/generate-sample-data.ts"
+    "generate-data": "npx tsx scripts/generate-sample-data.ts",
+    "generate-sales": "npx tsx scripts/generate-new-sales.ts",
+    "generate-inventory": "npx tsx scripts/generate-inventory.ts"
   },
   "devDependencies": {
     "@types/node": "^20.10.0",
     "typescript": "^5.3.3",
     "ts-node": "^10.9.2",
-    "dotenv": "^16.3.1"
+    "dotenv": "^16.3.1",
+    "mongoose": "^8.0.0"
   },
   "engines": {
     "node": ">=18.0.0",

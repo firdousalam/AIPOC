@@ -3,13 +3,14 @@
 import { useEffect, useState, useRef } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import apiClient from '@/services/api/client';
+import { CURRENCY_SYMBOL, formatCurrency } from '@/utils/constants';
 
 interface Product {
     _id: string;
     productId?: string;
     name?: string;
     description?: string;
-    price?: number;
+    costPrice?: number;
     category?: string;
     stock?: number;
     distributor?: string;
@@ -159,9 +160,9 @@ export default function ProductsPage() {
             'Company': product.company || 'N/A',
             'Distributor': product.distributor || 'N/A',
             'Stock': product.stock || 0,
-            'MRP': product.mrp ? `$${product.mrp.toFixed(2)}` : 'N/A',
-            'Sale Price': product.salePrice ? `$${product.salePrice.toFixed(2)}` : 'N/A',
-            'Price': product.price ? `$${product.price.toFixed(2)}` : 'N/A',
+            'MRP': product.mrp ? `${CURRENCY_SYMBOL}${product.mrp.toFixed(2)}` : 'N/A',
+            'Sale Price': product.salePrice ? `${CURRENCY_SYMBOL}${product.salePrice.toFixed(2)}` : 'N/A',
+            'Cost Price': product.costPrice ? `${CURRENCY_SYMBOL}${product.costPrice.toFixed(2)}` : 'N/A',
             'Discount': product.discount ? `${product.discount}%` : 'N/A',
             'Created At': product.createdAt ? new Date(product.createdAt).toLocaleDateString() : 'N/A',
         }));
@@ -375,10 +376,10 @@ export default function ProductsPage() {
                                         <div className="text-sm text-gray-900">
                                             {product.salePrice ? (
                                                 <>
-                                                    <div className="font-semibold">${product.salePrice.toFixed(2)}</div>
+                                                    <div className="font-semibold">{formatCurrency(product.salePrice)}</div>
                                                     {product.mrp && product.mrp > product.salePrice && (
                                                         <div className="text-xs text-gray-500 line-through">
-                                                            ${product.mrp.toFixed(2)}
+                                                            {formatCurrency(product.mrp)}
                                                         </div>
                                                     )}
                                                     {product.discount && (
@@ -387,8 +388,8 @@ export default function ProductsPage() {
                                                         </div>
                                                     )}
                                                 </>
-                                            ) : product.price ? (
-                                                <div className="font-semibold">${product.price.toFixed(2)}</div>
+                                            ) : product.costPrice ? (
+                                                <div className="font-semibold">{formatCurrency(product.costPrice)}</div>
                                             ) : (
                                                 <span className="text-gray-400">N/A</span>
                                             )}
@@ -470,7 +471,7 @@ export default function ProductsPage() {
                                 <div>
                                     <div className="text-xs text-gray-500">Price</div>
                                     <div className="text-sm font-semibold text-gray-900">
-                                        {product.salePrice ? `$${product.salePrice.toFixed(2)}` : product.price ? `$${product.price.toFixed(2)}` : 'N/A'}
+                                        {product.salePrice ? formatCurrency(product.salePrice) : product.costPrice ? formatCurrency(product.costPrice) : 'N/A'}
                                     </div>
                                 </div>
                                 <div>
@@ -683,7 +684,7 @@ function ProductModal({
     const [formData, setFormData] = useState<Partial<Product>>({
         name: product?.name || '',
         description: product?.description || '',
-        price: product?.price || 0,
+        costPrice: product?.costPrice || 0,
         category: product?.category || '',
         stock: product?.stock || 0,
         distributor: product?.distributor || '',
@@ -959,15 +960,15 @@ function ProductModal({
                             />
                         </div>
 
-                        {/* Price */}
+                        {/* Cost Price */}
                         <div>
                             <label className="block text-sm font-medium text-gray-700 mb-2">
-                                Price
+                                Cost Price
                             </label>
                             <input
                                 type="number"
-                                value={formData.price}
-                                onChange={(e) => handleChange('price', Number(e.target.value))}
+                                value={formData.costPrice}
+                                onChange={(e) => handleChange('costPrice', Number(e.target.value))}
                                 min="0"
                                 step="0.01"
                                 className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
@@ -1132,7 +1133,7 @@ function ProductViewModal({
                                         MRP
                                     </label>
                                     <div className="text-lg font-semibold text-gray-900">
-                                        {product.mrp ? `$${product.mrp.toFixed(2)}` : 'N/A'}
+                                        {product.mrp ? formatCurrency(product.mrp) : 'N/A'}
                                     </div>
                                 </div>
 
@@ -1142,17 +1143,17 @@ function ProductViewModal({
                                         Sale Price
                                     </label>
                                     <div className="text-lg font-semibold text-green-600">
-                                        {product.salePrice ? `$${product.salePrice.toFixed(2)}` : 'N/A'}
+                                        {product.salePrice ? formatCurrency(product.salePrice) : 'N/A'}
                                     </div>
                                 </div>
 
-                                {/* Price */}
+                                {/* Cost Price */}
                                 <div>
                                     <label className="block text-sm font-medium text-gray-700 mb-2">
-                                        Price
+                                        Cost Price
                                     </label>
                                     <div className="text-lg font-semibold text-gray-900">
-                                        {product.price ? `$${product.price.toFixed(2)}` : 'N/A'}
+                                        {product.costPrice ? formatCurrency(product.costPrice) : 'N/A'}
                                     </div>
                                 </div>
 

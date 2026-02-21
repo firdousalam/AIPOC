@@ -15,7 +15,7 @@ export class Product {
   description?: string;
 
   @Prop()
-  price?: number;
+  costPrice?: number;
 
   @Prop()
   category?: string;

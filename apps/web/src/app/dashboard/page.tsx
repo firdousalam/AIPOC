@@ -3,6 +3,7 @@
 import { useAuth } from '@/contexts/AuthContext';
 import { useEffect, useState } from 'react';
 import apiClient from '@/services/api/client';
+import { formatCurrency } from '@/utils/constants';
 
 interface Stats {
     totalSales: number;
@@ -27,25 +28,32 @@ export default function DashboardPage() {
 
     const fetchDashboardData = async () => {
         try {
-            // Fetch products
-            const productsResponse = await apiClient.get('/api/products');
-            const products = productsResponse.data;
+            // Fetch products (with pagination to get total count)
+            const productsResponse = await apiClient.get('/api/products?limit=1000');
+            const products = productsResponse.data.products || productsResponse.data;
+            const totalProducts = productsResponse.data.total || products.length;
 
-            // Fetch sales
-            const salesResponse = await apiClient.get('/api/sales');
-            const sales = salesResponse.data;
+            // Fetch sales (with pagination to get total count and revenue)
+            const salesResponse = await apiClient.get('/api/sales?limit=1000');
+            const sales = salesResponse.data.sales || salesResponse.data;
+            const totalSales = salesResponse.data.total || sales.length;
 
-            // Calculate stats
-            const totalRevenue = sales.reduce(
-                (sum: number, sale: any) => sum + (sale.totalAmount || 0),
-                0
-            );
-            const lowStock = products.filter((p: any) => p.stock < 20).length;
+            // Calculate stats - handle both old and new sale structure
+            const totalRevenue = Array.isArray(sales)
+                ? sales.reduce((sum: number, sale: any) => {
+                    // New structure has totalAmount directly
+                    return sum + (sale.totalAmount || 0);
+                }, 0)
+                : 0;
+
+            const lowStock = Array.isArray(products)
+                ? products.filter((p: any) => p.stock < 20).length
+                : 0;
 
             setStats({
-                totalSales: sales.length,
+                totalSales,
                 totalRevenue,
-                totalProducts: products.length,
+                totalProducts,
                 lowStockItems: lowStock,
             });
         } catch (error) {
@@ -85,7 +93,7 @@ export default function DashboardPage() {
                 />
                 <StatCard
                     title="Total Revenue"
-                    value={`$${stats.totalRevenue.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`}
+                    value={formatCurrency(stats.totalRevenue)}
                     icon="📈"
                     color="bg-green-500"
                 />

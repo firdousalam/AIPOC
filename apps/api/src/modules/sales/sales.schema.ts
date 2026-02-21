@@ -3,8 +3,7 @@ import { Document } from 'mongoose';
 
 export type SaleDocument = Sale & Document;
 
-@Schema({ timestamps: true })
-export class Sale {
+export class SaleItem {
   @Prop({ required: true })
   productId: string;
 
@@ -15,7 +14,30 @@ export class Sale {
   quantity: number;
 
   @Prop({ required: true })
-  price: number;
+  unitPrice: number;
+
+  @Prop({ required: true })
+  totalPrice: number;
+}
+
+export class CustomerInfo {
+  @Prop()
+  name?: string;
+
+  @Prop()
+  email?: string;
+
+  @Prop()
+  mobile?: string;
+
+  @Prop()
+  panOrVoterId?: string;
+}
+
+@Schema({ timestamps: true })
+export class Sale {
+  @Prop({ type: [SaleItem], required: true })
+  items: SaleItem[];
 
   @Prop({ required: true })
   totalAmount: number;
@@ -23,8 +45,11 @@ export class Sale {
   @Prop({ required: true })
   saleDate: Date;
 
-  @Prop()
-  customerId?: string;
+  @Prop({ type: CustomerInfo, default: () => ({ name: 'Cash' }) })
+  customer: CustomerInfo;
+
+  @Prop({ default: 'Cash' })
+  paymentMethod: string;
 
   @Prop()
   notes?: string;

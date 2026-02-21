@@ -5,20 +5,26 @@ export type InventoryItemDocument = InventoryItem & Document;
 
 @Schema({ timestamps: true })
 export class InventoryItem {
-  @Prop({ required: true })
+  @Prop({ required: true, unique: true })
   productId: string;
 
   @Prop({ required: true })
   productName: string;
 
-  @Prop({ required: true })
+  @Prop({ required: true, default: 0 })
   quantity: number;
 
-  @Prop({ required: true })
+  @Prop({ required: true, default: 10 })
   reorderLevel: number;
 
+  @Prop()
+  location?: string;
+
   @Prop({ default: Date.now })
-  lastUpdated: Date;
+  lastRestocked?: Date;
+
+  @Prop({ default: 'active', enum: ['active', 'inactive'] })
+  status: string;
 }
 
 export const InventoryItemSchema = SchemaFactory.createForClass(InventoryItem);

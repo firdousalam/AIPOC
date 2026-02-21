@@ -15,7 +15,7 @@ export class CreateProductDto {
   @Min(VALIDATION_CONSTRAINTS.PRODUCT.PRICE_MIN, {
     message: VALIDATION_MESSAGES.PRODUCT.PRICE_MIN
   })
-  price?: number;
+  costPrice?: number;
 
   @IsOptional()
   @IsString({ message: VALIDATION_MESSAGES.PRODUCT.CATEGORY_INVALID })

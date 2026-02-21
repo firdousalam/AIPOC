@@ -1,4 +1,4 @@
-import { IsString, IsNumber, Min } from 'class-validator';
+import { IsString, IsNumber, IsOptional, Min } from 'class-validator';
 
 export class CreateInventoryDto {
   @IsString()
@@ -13,6 +13,11 @@ export class CreateInventoryDto {
 
   @IsNumber()
   @Min(0)
-  reorderLevel: number;
+  @IsOptional()
+  reorderLevel?: number;
+
+  @IsString()
+  @IsOptional()
+  location?: string;
 }
 
